@@ -35,12 +35,12 @@ goto_stmt      = GOTO l:label { return { name: "goto", children: [l]}; }
  * VARIABLE HANDLING CONSTRUCTS    *
  * * * * * * * * * * * * * * * * * */
 
-declare_stmt   = init_declare
-               / simple_declare
+declare_stmt   = initialize
+               / declare
 
-init_declare   = t:typename WS i:ID a:assign_pred { return { construct: "init_declare", name: "init_declare", children: [t, i, a]};}
+initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", children: [t, i, a]};}
 
-simple_declare = t:typename WS i:ID { return { construct: "declare", name: "declare", children: [t, i]}; }
+declare = t:typename WS i:ID { return { construct: "declare", name: "declare", children: [t, i]}; }
 
 assign_pred    = ASSIGN_OP e:expr { return e; }
 
