@@ -44,9 +44,13 @@ declare = t:typename WS i:ID { return { construct: "declare", name: "declare", c
 
 assign_pred    = ASSIGN_OP e:expr { return e; }
 
-assign_stmt    = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", children: [i, e]}; }
+assign_stmt    = list_itm_assign 
+               / scalar_assign
 
-list_itm_assgn = LET i:ID OPEN_BRACKET index:integer CLOSE_BRACKET EQUALS e:expr
+list_itm_assign= LET li:list_itm EQUALS e:expr { return { construct: "assign", name: "assign", children: [li, e]};}
+
+scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", children: [i, e]}; }
+
 
 /* CONDITIONAL EXECUTION CONSTRUCTS */
 // If-then construct
@@ -113,7 +117,7 @@ integer        = d:DIGIT+             WS  { return parseInt(d); }
 num_var        = list_itm
                / scalar_num
 
-list_itm       = i:ID OPEN_BRACKET index:integer CLOSE_BRACKET
+list_itm       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_itm", name: "list item", children: [i, index]}; }
 
 scalar_num     = i:ID
 
