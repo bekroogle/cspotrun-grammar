@@ -1,6 +1,14 @@
+{ pegedit_opts = 
+  { 
+    treenav:
+      //"zoom";
+      //"cluster";
+      "collapse"
+  };
+}
 // Grammar:
 
-program        = stmts:statement* { return {construct: "program", name: "program", children: [stmts]}; }
+program        = stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement      = label_stmt
                / goto_stmt
@@ -21,17 +29,22 @@ label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
 label          = LESS i:ID GREATER { return i; }
 
 // Transfer flow of control to the node of the tree with the given label.
-goto_stmt      = GOTO l:label
+goto_stmt      = GOTO l:label { return { name: "goto", children: [l]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * VARIABLE HANDLING CONSTRUCTS    *
  * * * * * * * * * * * * * * * * * */
 
-declare_stmt   = t:typename WS i:ID a:assign_pred?
+declare_stmt   = init_declare
+               / simple_declare
 
-assign_pred    = ASSIGN_OP e:expr
+init_declare   = t:typename WS i:ID a:assign_pred { return { construct: "init_declare", name: "init_declare", children: [t, i, a]};}
 
-assign_stmt    = LET i:ID ASSIGN_OP e:expr
+simple_declare = t:typename WS i:ID { return { construct: "declare", name: "declare", children: [t, i]}; }
+
+assign_pred    = ASSIGN_OP e:expr { return e; }
+
+assign_stmt    = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", children: [i, e]}; }
 
 list_itm_assgn = LET i:ID OPEN_BRACKET index:integer CLOSE_BRACKET EQUALS e:expr
 
@@ -87,7 +100,7 @@ recip          = '/' n:number { return ['/', [1, n]]; }
  
 parens         = '(' a:add ')'
                / number
-number         = num_lit
+number         = n:num_lit { return {name: n}; }
                / num_var
 
 num_lit        = float
@@ -95,7 +108,7 @@ num_lit        = float
 
 float          = DIGIT* SPOT DIGIT+ WS  { return text().trim(); }
 
-integer        = DIGIT+             WS  { return text().trim(); }
+integer        = d:DIGIT+             WS  { return parseInt(d); }
 
 num_var        = list_itm
                / scalar_num
@@ -124,7 +137,7 @@ typename       = TEXT / INT / REAL / LIST
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE / typename
+keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE / LET / typename
 
 typename       = TEXT / INT / REAL / LIST
 // Identifier for variables, labels, etc. FolloWS C++ rules.
@@ -171,7 +184,7 @@ TRUE           = 'true'        WS  { return text().trim(); }
 WHILE          = 'while'       WS  { return text().trim(); }
 
 // Typenames
-INT            = 'int'         WS  { return {name: text().trim(); }
+INT            = 'int'         WS  { return {name: text().trim()}; }
 REAL           = 'real'        WS  { return text().trim(); }
 TEXT           = 'text'        WS  { return text().trim(); }
 LIST           = 'list'        WS  { return text().trim(); }
