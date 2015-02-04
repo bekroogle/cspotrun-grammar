@@ -84,25 +84,25 @@ print_stmt     = PRINT expr
 //   divide => multiply by reciprocal).
 expr           = add
 
-add            = l:subtract '+' r:add { return ['+', [l, r]]; }
+add            = l:subtract PLUS r:add { return ['+', [l, r]]; }
                / subtract
  
 subtract       = l:neg r:subtract { return ['+', [l, r]];}
                / neg
  
-neg            = '-' n:mult { return ['*',[n, -1]]; }
+neg            = MINUS n:mult { return ['*',[n, -1]]; }
                / mult
  
-mult           = l:div '*' r:mult { return ['*', [l, r]]; }
+mult           = l:div TIMES r:mult { return ['*', [l, r]]; }
                / div
  
 div            = num:recip denom:div { return ['*', [num, denom]]; }
                / recip
  
-recip          = '/' n:number { return ['/', [1, n]]; }
+recip          = DIVIDE n:number { return ['/', [1, n]]; }
                / parens
  
-parens         = '(' a:add ')'
+parens         = OPEN_PAREN a:add CLOSE_PAREN
                / number
 number         = n:num_lit { return {name: n}; }
                / num_var
@@ -143,9 +143,9 @@ typename       = TEXT / INT / REAL / LIST
 // List of reserved words.  
 keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE / LET / typename
 
-typename       = TEXT / INT / REAL / LIST
+typename       = tn:(TEXT / INT / REAL / LIST) { return { name: tn }; }
 // Identifier for variables, labels, etc. FolloWS C++ rules.
-ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()};}
+ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: i.join('')};}
 
 DIGIT          = (ZERO/NON_ZERO_DIGIT)
 NON_ZERO_DIGIT = [1-9]
@@ -188,7 +188,7 @@ TRUE           = 'true'        WS  { return text().trim(); }
 WHILE          = 'while'       WS  { return text().trim(); }
 
 // Typenames
-INT            = 'int'         WS  { return {name: text().trim()}; }
+INT            = 'int'         WS  { return text().trim(); }
 REAL           = 'real'        WS  { return text().trim(); }
 TEXT           = 'text'        WS  { return text().trim(); }
 LIST           = 'list'        WS  { return text().trim(); }
