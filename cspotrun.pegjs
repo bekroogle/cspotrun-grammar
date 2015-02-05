@@ -54,13 +54,13 @@ scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: 
 
 /* CONDITIONAL EXECUTION CONSTRUCTS */
 // If-then construct
-ifthen_stmt    = ip:if_part tp:then_part end_if
+ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if-then", name: "if-then", children: [ip, tp]};}
 
-if_part        = IF cond:bool_expr THEN COLON
+if_part        = IF cond:bool_expr THEN COLON { return {construct: "cond", name: "cond", children: [cond]};}
 
-then_part      = stmts:statement*
+then_part      = stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
 
-end_if         = END IF
+end_if         = END IF 
 
 // Loop construct
 loop_stmt      = lh:loop_header lb:loop_body el:end_loop
@@ -89,30 +89,33 @@ add            = l:subtract PLUS r:add { return { construct: "add", name: "+", c
  
 subtract       = l:neg r:subtract { return {construct: "add", name: '+', children: [l, r]};}
                / neg
- 
-neg            = MINUS n:mult { return {construct: "negative", name: "unary minus", children: [n]};}
+               
+               // Little hack here to display negatives, instead of more complicated tree.  
+neg            = MINUS n:mult { return {construct: "negative", name: '-' + n.name} ;}
                / mult
  
 mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", children: [l, r]}; }
                / div
  
-div            = num:recip denom:div { return ['*', [num, denom]]; }
+div            = num:recip denom:div { return {construct: "multiply", name: '*', children: [num, denom]}; }
                / recip
  
-recip          = DIVIDE n:number { return ['/', [1, n]]; }
+               // Little hack here to display reciprocals, instead of more complicated tree. 
+recip          = DIVIDE n:number { return {construct: "reciprocal", name: "1/" + n.name}; }
                / parens
  
-parens         = OPEN_PAREN a:add CLOSE_PAREN
+parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                / number
+               
 number         = n:num_lit { return {name: n}; }
                / num_var
 
-num_lit        = float
-               / integer
+num_lit        = f:float { return parseFloat(f); }
+               / i:integer { return parseInt(i); }
 
-float          = DIGIT* SPOT DIGIT+ WS  { return text().trim(); }
+float          = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 
-integer        = d:DIGIT+             WS  { return parseInt(d); }
+integer        = d:DIGIT+             WS  { return text().trim(); }
 
 num_var        = list_itm
                / scalar_num
@@ -123,10 +126,10 @@ scalar_num     = i:ID
 
 
 // Boolean expressions:
-bool_expr      = bool_lit 
+bool_expr      = bool_lit {return { name: text().trim()}; }
                / relational_expr
 
-bool_lit       = TRUE
+bool_lit       = TRUE 
                / FALSE
 
 relational_expr= l:expr op:rel_op r:expr
