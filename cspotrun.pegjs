@@ -1,5 +1,43 @@
 { 
   pegedit_opts = {treenav:"collapse"};
+  
+  symbol_table = {};
+
+  var traverse_program = function(ast) {
+    return_val = [];
+    
+    if (ast.children) {
+      for (var stmt in ast.children) {
+        return_val.push(traverse(ast.children[stmt]));
+      }
+    }
+    return return_val.join('');
+  };
+  var traverse_initialize = function(ast) {
+    symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
+  };
+  var traverse_declare = function(ast) {
+    symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"]};
+  }
+  var traverse_add = function(ast) {
+    return traverse(ast.child_objs["left"]) + 
+      traverse(ast.child_objs["right"]);
+  };
+  var traverse_number = function(ast) {
+    return ast.name
+  };
+  traverse = function(ast) {
+    if (ast.construct) {
+      switch (ast.construct) {
+        case "program"    : return traverse_program(ast);
+        case "initialize" : return traverse_initialize(ast);
+        case "declare"    : return traverse_declare(ast);
+        case "add"        : return traverse_add(ast);
+        case "number"     : return traverse_number(ast);
+        default: console.error(ast);
+      }
+    }
+  };
 }
 // Grammar:
 
@@ -33,7 +71,7 @@ goto_stmt      = GOTO l:label { return { name: "goto", child_objs: {label: l}, c
 declare_stmt   = initialize
                / declare
 
-initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t, id: i, value: a}, children: [t, i, a]};}
+initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t.name, id: i.name, value: a}, children: [t, i, a]};}
 
 declare = t:typename WS i:ID { return { construct: "declare", name: "declare", child_objs: {typename: t.name, id: i.name}, children: [t, i]}; }
 
@@ -102,7 +140,7 @@ recip          = DIVIDE n:number { return {construct: "reciprocal", name: "1/" +
 parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                / number
                
-number         = n:num_lit { return {name: n}; }
+number         = n:num_lit { return {construct: "number", name: n}; }
                / num_var
 
 num_lit        = f:float { return parseFloat(f); }
