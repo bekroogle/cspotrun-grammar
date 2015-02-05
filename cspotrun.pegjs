@@ -32,6 +32,9 @@
     return traverse(ast.child_objs["left"]) + 
       traverse(ast.child_objs["right"]);
   };
+  var traverse_mult = function(ast) {
+    return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
+  };
   var traverse_number = function(ast) {
     return ast.name
   };
@@ -48,6 +51,7 @@
         case "initialize" : return traverse_initialize(ast);
         case "declare"    : return traverse_declare(ast);
         case "add"        : return traverse_add(ast);
+        case "multiply"       : return traverse_mult(ast);
         case "number"     : return traverse_number(ast);
         case "num_var"    : return traverse_num_var(ast);
         case "null"       : return null;
