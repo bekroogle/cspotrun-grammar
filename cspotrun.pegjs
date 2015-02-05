@@ -24,7 +24,7 @@ label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
 label          = LESS i:ID GREATER { return i; }
 
 // Transfer flow of control to the node of the tree with the given label.
-goto_stmt      = GOTO l:label { return { name: "goto", children: [l]}; }
+goto_stmt      = GOTO l:label { return { name: "goto", child_objs: {label: l}, children: [l]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * VARIABLE HANDLING CONSTRUCTS    *
@@ -33,41 +33,41 @@ goto_stmt      = GOTO l:label { return { name: "goto", children: [l]}; }
 declare_stmt   = initialize
                / declare
 
-initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", children: [t, i, a]};}
+initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t, id: i, value: a}, children: [t, i, a]};}
 
-declare = t:typename WS i:ID { return { construct: "declare", name: "declare", children: [t, i]}; }
+declare = t:typename WS i:ID { return { construct: "declare", name: "declare", child_objs: {typename: t.name, id: i.name}, children: [t, i]}; }
 
 assign_pred    = ASSIGN_OP e:expr { return e; }
 
 assign_stmt    = list_itm_assign 
                / scalar_assign
 
-list_itm_assign= LET li:list_itm EQUALS e:expr { return { construct: "assign", name: "assign", children: [li, e]};}
+list_itm_assign= LET li:list_itm EQUALS e:expr { return { construct: "assign", name: "assign", child_objs: {list_item: li, value: e}, children: [li, e]};}
 
-scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", children: [i, e]}; }
+scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
 
 
 /* CONDITIONAL EXECUTION CONSTRUCTS */
 // If-then construct
 ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if-then", name: "if-then", children: [ip, tp]};}
 
-if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", children: [cond]};}
+if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
 
 then_part      = stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
 
 end_if         = END IF 
 
 // Loop construct
-loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", children: [lh, lb]}; }
+loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {header: lh, body: lb}, children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", children: [cond]}; }
+loop_header    = WHILE cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]}; }
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
 end_loop       = REPEAT
 
 /* I/O CONSTRUCTS */
-print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print", children: [e]}; }
+print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * EXPRESSIONS                     *
@@ -79,20 +79,20 @@ print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print",
 //   divide => multiply by reciprocal).
 expr           = add
 
-add            = l:subtract PLUS r:add { return { construct: "add", name: "+", children:[l, r]}; }
+add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
                / subtract
  
-subtract       = l:neg r:subtract { return {construct: "add", name: '+', children: [l, r]};}
+subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_objs: {left: l, right: r}, children: [l, r]};}
                / neg
                
                // Little hack here to display negatives, instead of more complicated tree.  
 neg            = MINUS n:mult { return {construct: "negative", name: '-' + n.name} ;}
                / mult
  
-mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", children: [l, r]}; }
+mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
                / div
  
-div            = num:recip denom:div { return {construct: "multiply", name: '*', children: [num, denom]}; }
+div            = num:recip denom:div { return {construct: "multiply", name: '*', child_objs: {numerator: num, denominator: denom}, children: [num, denom]}; }
                / recip
  
                // Little hack here to display reciprocals, instead of more complicated tree. 
@@ -115,7 +115,7 @@ integer        = d:DIGIT+             WS  { return text().trim(); }
 num_var        = list_itm
                / scalar_num
 
-list_itm       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_itm", name: "list item", children: [i, index]}; }
+list_itm       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_itm", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
 
 scalar_num     = i:ID
 
