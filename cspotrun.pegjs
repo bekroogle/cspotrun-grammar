@@ -84,16 +84,16 @@ print_stmt     = PRINT expr
 //   divide => multiply by reciprocal).
 expr           = add
 
-add            = l:subtract PLUS r:add { return ['+', [l, r]]; }
+add            = l:subtract PLUS r:add { return { construct: "add", name: "+", children:[l, r]}; }
                / subtract
  
-subtract       = l:neg r:subtract { return ['+', [l, r]];}
+subtract       = l:neg r:subtract { return {construct: "add", name: '+', children: [l, r]};}
                / neg
  
-neg            = MINUS n:mult { return ['*',[n, -1]]; }
+neg            = MINUS n:mult { return {construct: "negative", name: "unary minus", children: [n]};}
                / mult
  
-mult           = l:div TIMES r:mult { return ['*', [l, r]]; }
+mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", children: [l, r]}; }
                / div
  
 div            = num:recip denom:div { return ['*', [num, denom]]; }
