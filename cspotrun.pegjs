@@ -148,7 +148,7 @@ keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE
 
 typename       = tn:(TEXT / INT / REAL / LIST) { return { name: tn }; }
 // Identifier for variables, labels, etc. FolloWS C++ rules.
-ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: i.join('')};}
+ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
 DIGIT          = (ZERO/NON_ZERO_DIGIT)
 NON_ZERO_DIGIT = [1-9]
