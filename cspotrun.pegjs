@@ -1,13 +1,31 @@
 { 
   pegedit_opts = {treenav:"collapse"};
   
+  // Removes D3js's  circular references so that the tree can be
+  // stringified.
+  var decircularize = function(graph) {
+    if (graph.parent) {
+      delete graph['parent'];
+    }
+
+    if (graph.children) {
+      for (var i = 0; i < graph.children.length; i++) {
+        decircularize(graph.children[i]);
+      }
+    }
+  };
+
   symbol_table = {
     insert: function(ast) {
       this[ast.child_objs["id"]] = {"type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
     },
     lookup: function(key) {
       return this[key].val;
-    }
+    },
+    proc: function(ast) {
+      decircularize(ast.child_objs["body"]);
+      this[ast.child_objs["id"]] = {"type": "procedure", "val": ast.child_objs["body"]};
+    } 
   };
 
   var traverse_program = function(ast) {
@@ -19,6 +37,10 @@
       }
     }
     return return_val.join('');
+  };
+  var traverse_proc_def = function(ast) {
+
+    symbol_table.proc(ast);
   };
   var traverse_initialize = function(ast) {
     symbol_table.insert(ast);
@@ -48,6 +70,7 @@
     if (ast.construct) {
       switch (ast.construct) {
         case "program"    : return traverse_program(ast);
+        case "proc_def"   : return traverse_proc_def(ast);
         case "initialize" : return traverse_initialize(ast);
         case "declare"    : return traverse_declare(ast);
         case "add"        : return traverse_add(ast);
@@ -66,17 +89,26 @@
 
 program        = stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
-statement      = stmt:(label_stmt
-                  / goto_stmt
-                  / declare_stmt
-                  / assign_stmt
-                  / ifthen_stmt
-                  / loop_stmt
-                  / print_stmt) WSNL { return stmt; }
+statement      = stmt:( label_stmt
+                      / proc_def
+                      / goto_stmt
+                      / declare_stmt
+                      / assign_stmt
+                      / ifthen_stmt
+                      / loop_stmt
+                      / print_stmt) WSNL { return stmt; }
 
 /* * * * * * * * * * * * * * * * * * 
- * GOTO CONSTRUCTS                 *
+ * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
+
+proc_def       = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
+
+proc_header    = PROC i:ID COLON WSNL { return i; }
+
+proc_body      = stmts:statement* { return {construct: "program", name: "proc body", children: stmts};}
+
+end_proc       = END PROC
 
 // Target of goto statements.
 label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
@@ -238,6 +270,7 @@ GOTO           = 'goto'        WS  { return text().trim(); }
 IF             = 'if'          WS  { return text().trim(); }
 LET            = 'let'         WS  { return text().trim(); }
 PRINT          = 'print'       WS  { return text().trim(); }
+PROC           = 'proc'        WS  { return text().trim(); }
 PROMPT         = 'prompt'      WS  { return text().trim(); }
 REPEAT         = 'repeat'      WS  { return text().trim(); }
 THEN           = 'then'        WS  { return text().trim(); }
