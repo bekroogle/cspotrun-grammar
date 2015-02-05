@@ -1,7 +1,14 @@
 { 
   pegedit_opts = {treenav:"collapse"};
   
-  symbol_table = {};
+  symbol_table = {
+    insert: function(ast) {
+      this[ast.child_objs["id"]] = {"type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
+    },
+    lookup: function(key) {
+      return this[key].val;
+    }
+  };
 
   var traverse_program = function(ast) {
     return_val = [];
@@ -14,17 +21,25 @@
     return return_val.join('');
   };
   var traverse_initialize = function(ast) {
-    symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
+    symbol_table.insert(ast);
+    // symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
   };
   var traverse_declare = function(ast) {
-    symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"]};
-  }
+    ast["child_objs"]["value"] = {construct: "null", name: null};
+    symbol_table.insert(ast);
+  };
   var traverse_add = function(ast) {
     return traverse(ast.child_objs["left"]) + 
       traverse(ast.child_objs["right"]);
   };
   var traverse_number = function(ast) {
     return ast.name
+  };
+  var traverse_num_var = function(ast) {
+    return symbol_table.lookup(ast.name);
+  };
+  var traverse_print_stmt = function(ast) {
+    return traverse(ast.child_objs["expression"]);
   };
   traverse = function(ast) {
     if (ast.construct) {
@@ -34,7 +49,11 @@
         case "declare"    : return traverse_declare(ast);
         case "add"        : return traverse_add(ast);
         case "number"     : return traverse_number(ast);
-        default: console.error(ast);
+        case "num_var"    : return traverse_num_var(ast);
+        case "null"       : return null;
+        case "print_stmt" : return traverse_print_stmt(ast);
+        default: console.error("AST Traversal error: ");
+                 console.error(ast);
       }
     }
   };
@@ -155,7 +174,7 @@ num_var        = list_itm
 
 list_itm       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_itm", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
 
-scalar_num     = i:ID
+scalar_num     = i:ID { return {construct: "num_var", name: i.name};}
 
 
 // Boolean expressions:
