@@ -72,7 +72,7 @@ loop_body      = stmts:statement* { return {construct: "program", name: "loop bo
 end_loop       = REPEAT
 
 /* I/O CONSTRUCTS */
-print_stmt     = PRINT expr
+print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print", children: [e]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * EXPRESSIONS                     *
