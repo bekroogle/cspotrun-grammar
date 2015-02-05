@@ -1,22 +1,17 @@
-{ pegedit_opts = 
-  { 
-    treenav:
-      //"zoom";
-      //"cluster";
-      "collapse"
-  };
+{ 
+  pegedit_opts = {treenav:"collapse"};
 }
 // Grammar:
 
 program        = stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
-statement      = label_stmt
-               / goto_stmt
-               / declare_stmt
-               / assign_stmt
-               / ifthen_stmt
-               / loop_stmt
-               / print_stmt
+statement      = stmt:(label_stmt
+                  / goto_stmt
+                  / declare_stmt
+                  / assign_stmt
+                  / ifthen_stmt
+                  / loop_stmt
+                  / print_stmt) WSNL { return stmt; }
 
 /* * * * * * * * * * * * * * * * * * 
  * GOTO CONSTRUCTS                 *
@@ -56,7 +51,7 @@ scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: 
 // If-then construct
 ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if-then", name: "if-then", children: [ip, tp]};}
 
-if_part        = IF cond:bool_expr THEN COLON { return {construct: "cond", name: "cond", children: [cond]};}
+if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", children: [cond]};}
 
 then_part      = stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
 
@@ -65,7 +60,7 @@ end_if         = END IF
 // Loop construct
 loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON { return {construct: "cond", name: "cond", children: [cond]}; }
+loop_header    = WHILE cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", children: [cond]}; }
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
@@ -150,9 +145,7 @@ typename       = tn:(TEXT / INT / REAL / LIST) { return { name: tn }; }
 // Identifier for variables, labels, etc. FolloWS C++ rules.
 ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
-DIGIT          = (ZERO/NON_ZERO_DIGIT)
-NON_ZERO_DIGIT = [1-9]
-ZERO           = [0]
+DIGIT          = [0-9]
 
 // Punctuation:
 COLON          = operator:':'  WS  { return operator; }
@@ -197,4 +190,5 @@ TEXT           = 'text'        WS  { return text().trim(); }
 LIST           = 'list'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
-WS             = [ \t\n]*
+WS             = [ \t]*
+WSNL             = [ \t\n]*
