@@ -63,11 +63,11 @@ then_part      = stmts:statement* { return {construct: "program", name: "then pa
 end_if         = END IF 
 
 // Loop construct
-loop_stmt      = lh:loop_header lb:loop_body el:end_loop
+loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON
+loop_header    = WHILE cond:bool_expr COLON { return {construct: "cond", name: "cond", children: [cond]}; }
 
-loop_body      = stmts:statement*
+loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
 end_loop       = REPEAT
 
