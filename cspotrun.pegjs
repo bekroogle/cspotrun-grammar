@@ -27,7 +27,13 @@
       this[ast.child_objs["id"]] = {"type": "procedure", "val": ast.child_objs["body"]};
     } 
   };
-
+  var traverse_add = function(ast) {
+    return traverse(ast.child_objs["left"]) + 
+      traverse(ast.child_objs["right"]);
+  };
+  var traverse_assign = function(ast) {
+    symbol_table[ast.child_objs["id"]] = traverse(ast.children[1]);
+  };
   var traverse_program = function(ast) {
     return_val = [];
     
@@ -38,8 +44,10 @@
     }
     return return_val.join('');
   };
+  var traverse_proc_call = function(ast) {
+    return traverse(symbol_table.lookup(ast.child_objs["id"]));
+  };
   var traverse_proc_def = function(ast) {
-
     symbol_table.proc(ast);
   };
   var traverse_initialize = function(ast) {
@@ -50,10 +58,7 @@
     ast["child_objs"]["value"] = {construct: "null", name: null};
     symbol_table.insert(ast);
   };
-  var traverse_add = function(ast) {
-    return traverse(ast.child_objs["left"]) + 
-      traverse(ast.child_objs["right"]);
-  };
+  
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
   };
@@ -69,15 +74,17 @@
   traverse = function(ast) {
     if (ast.construct) {
       switch (ast.construct) {
-        case "program"    : return traverse_program(ast);
-        case "proc_def"   : return traverse_proc_def(ast);
-        case "initialize" : return traverse_initialize(ast);
-        case "declare"    : return traverse_declare(ast);
         case "add"        : return traverse_add(ast);
-        case "multiply"       : return traverse_mult(ast);
-        case "number"     : return traverse_number(ast);
-        case "num_var"    : return traverse_num_var(ast);
+        case "assign"     : return traverse_assign(ast);
+        case "declare"    : return traverse_declare(ast);
+        case "initialize" : return traverse_initialize(ast);
+        case "proc_call"  : return traverse_proc_call(ast);
+        case "proc_def"   : return traverse_proc_def(ast);
+        case "program"    : return traverse_program(ast);
+        case "multiply"   : return traverse_mult(ast);
         case "null"       : return null;
+        case "num_var"    : return traverse_num_var(ast);
+        case "number"     : return traverse_number(ast);
         case "print_stmt" : return traverse_print_stmt(ast);
         default: console.error("AST Traversal error: ");
                  console.error(ast);
@@ -91,6 +98,7 @@ program        = stmts:statement* { return {construct: "program", name: "program
 
 statement      = stmt:( label_stmt
                       / proc_def
+                      / proc_call
                       / goto_stmt
                       / declare_stmt
                       / assign_stmt
@@ -110,6 +118,7 @@ proc_body      = stmts:statement* { return {construct: "program", name: "proc bo
 
 end_proc       = END PROC
 
+proc_call        = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
 // Target of goto statements.
 label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
 
@@ -264,6 +273,7 @@ LESS_EQUAL     = '<='          WS  { return text().trim(); }
 LESS           = '<'           WS  { return text().trim(); }
 
 // Keywords
+DO             = 'do'          WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
 FALSE          = 'false'       WS  { return text().trim(); }
 GOTO           = 'goto'        WS  { return text().trim(); }
