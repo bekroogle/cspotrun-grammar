@@ -1,6 +1,6 @@
 { 
   pegedit_opts = {treenav:"collapse"};
-  
+  return_val = [];
   // Removes D3js's  circular references so that the tree can be
   // stringified.
   var decircularize = function(graph) {
@@ -14,7 +14,6 @@
       }
     }
   };
-
   symbol_table = {
     insert: function(ast) {
       this[ast.child_objs["id"]] = {"type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
@@ -32,7 +31,11 @@
       traverse(ast.child_objs["right"]);
   };
   var traverse_assign = function(ast) {
-    symbol_table[ast.child_objs["id"]] = traverse(ast.children[1]);
+    symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]);
+  };
+  var traverse_bool_lit = function(ast) {
+    if (ast.name === "true") return true;
+    else return false;
   };
   var traverse_declare = function(ast) {
     ast["child_objs"]["value"] = {construct: "null", name: null};
@@ -41,6 +44,16 @@
   var traverse_initialize = function(ast) {
     symbol_table.insert(ast);
     // symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
+  };
+  var traverse_loop_stmt = function(ast) {
+    while (traverse(ast.child_objs["condition"])) {
+      ast.return_val.push(traverse(ast.child_objs["body"]));
+    }
+
+    // for (var i = 0; i < return_stack.length; i++) {
+    //   return_val.push(return_stack[i]);
+    // }
+    return ast.return_val.join('');
   };
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
@@ -61,31 +74,45 @@
     symbol_table.proc(ast);
   };
   var traverse_program = function(ast) {
-    return_val = [];
-    
     if (ast.children) {
       for (var stmt in ast.children) {
-        return_val.push(traverse(ast.children[stmt]));
+        ast.return_val.push(traverse(ast.children[stmt]));
       }
     }
-    return return_val.join('');
+    return ast.return_val.join('');
+  };
+  var traverse_relational_expr = function(ast) {
+    l = traverse(ast.child_objs["l"]);
+    r = traverse(ast.child_objs["r"]);
+
+    switch (ast.child_objs["operator"]) {  
+      case '<='    : return l <= r;  
+      case '<'     : return l < r;  
+      case '>='    : return l >= r; 
+      case '>'     : return l > r; 
+      case '='     : return l = r;
+      default      : throw("Non-implemented relational operator."); 
+    }
   };
   traverse = function(ast) {
+    ast.return_val = [];
     if (ast.construct) {
       switch (ast.construct) {
-        case "add"        : return traverse_add(ast);
-        case "assign"     : return traverse_assign(ast);
-        case "declare"    : return traverse_declare(ast);
-        case "initialize" : return traverse_initialize(ast);
-        case "loop_stmt"  : return traverse_loop_stmt(ast);
-        case "proc_call"  : return traverse_proc_call(ast);
-        case "proc_def"   : return traverse_proc_def(ast);
-        case "program"    : return traverse_program(ast);
-        case "multiply"   : return traverse_mult(ast);
-        case "null"       : return null;
-        case "num_var"    : return traverse_num_var(ast);
-        case "number"     : return traverse_number(ast);
-        case "print_stmt" : return traverse_print_stmt(ast);
+        case "add"              : return traverse_add(ast);
+        case "assign"           : return traverse_assign(ast);
+        case "bool_lit"         : return traverse_bool_lit(ast);
+        case "declare"          : return traverse_declare(ast);
+        case "initialize"       : return traverse_initialize(ast);
+        case "loop_stmt"        : return traverse_loop_stmt(ast);
+        case "proc_call"        : return traverse_proc_call(ast);
+        case "proc_def"         : return traverse_proc_def(ast);
+        case "program"          : return traverse_program(ast);
+        case "multiply"         : return traverse_mult(ast);
+        case "null"             : return null;
+        case "num_var"          : return traverse_num_var(ast);
+        case "number"           : return traverse_number(ast);
+        case "print_stmt"       : return traverse_print_stmt(ast);
+        case "relational_expr"  : return traverse_relational_expr(ast);
         default: console.error("AST Traversal error: ");
                  console.error(ast);
       }
@@ -160,9 +187,10 @@ then_part      = stmts:statement* { return {construct: "program", name: "then pa
 end_if         = END IF 
 
 // Loop construct
-loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {header: lh, body: lb}, children: [lh, lb]}; }
+loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]}; }
+loop_header    = WHILE cond:bool_expr COLON WSNL{ return cond;}
+  // return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]}; }
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
@@ -223,13 +251,13 @@ scalar_num     = i:ID { return {construct: "num_var", name: i.name};}
 
 
 // Boolean expressions:
-bool_expr      = bool_lit {return { name: text().trim()}; }
-               / relational_expr
+bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
+               / r:relational_expr 
 
 bool_lit       = TRUE 
-               / FALSE
+               / FALSE 
 
-relational_expr= l:expr op:rel_op r:expr
+relational_expr= l:expr op:rel_op r:expr {return {construct: "relational_expr", name: op, child_objs: {operator: op, "l": l, "r": r}, children: [l, r]};}
 
 rel_op         = EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
 
