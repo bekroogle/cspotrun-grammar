@@ -100,6 +100,10 @@
       default      : throw("Non-implemented relational operator."); 
     }
   };
+  var traverse_string_expr = function(ast) {
+    return ast.name;
+  };
+
   traverse = function(ast) {
     ast.return_val = [];
     if (ast.construct) {
@@ -119,11 +123,12 @@
         case "number"           : return traverse_number(ast);
         case "print_stmt"       : return traverse_print_stmt(ast);
         case "relational_expr"  : return traverse_relational_expr(ast);
+        case "string_expr"      : return traverse_string_expr(ast);
         default: console.error("AST Traversal error: ");
                  console.error(ast);
       }
     }
-  };
+  }
 }
 // Grammar:
 
@@ -213,7 +218,15 @@ print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print",
 //   Left associative operations are refactored into 
 //   commutative operations algebraically. (Subract => add a negative,
 //   divide => multiply by reciprocal).
-expr           = add
+expr           = num_expr
+               / string_expr 
+
+string_expr    = DBL_QUOTE str:not_quote* DBL_QUOTE { return { construct: "string_expr", name: str.join('')}; }
+
+not_quote      = ! DBL_QUOTE char:. { return char; }
+
+
+num_expr       = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
                / subtract
