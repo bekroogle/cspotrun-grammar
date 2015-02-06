@@ -42,12 +42,6 @@
     symbol_table.insert(ast);
     // symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
   };
-  var traverse_proc_call = function(ast) {
-    return traverse(symbol_table.lookup(ast.child_objs["id"]));
-  };
-  var traverse_proc_def = function(ast) {
-    symbol_table.proc(ast);
-  };
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
   };
@@ -59,6 +53,12 @@
   };
   var traverse_print_stmt = function(ast) {
     return traverse(ast.child_objs["expression"]);
+  };
+  var traverse_proc_call = function(ast) {
+    return traverse(symbol_table.lookup(ast.child_objs["id"]));
+  };
+  var traverse_proc_def = function(ast) {
+    symbol_table.proc(ast);
   };
   var traverse_program = function(ast) {
     return_val = [];
@@ -77,7 +77,7 @@
         case "assign"     : return traverse_assign(ast);
         case "declare"    : return traverse_declare(ast);
         case "initialize" : return traverse_initialize(ast);
-        // case "loop_stmt"  : return traverse_loop_stmt(ast);
+        case "loop_stmt"  : return traverse_loop_stmt(ast);
         case "proc_call"  : return traverse_proc_call(ast);
         case "proc_def"   : return traverse_proc_def(ast);
         case "program"    : return traverse_program(ast);
