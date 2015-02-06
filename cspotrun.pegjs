@@ -79,7 +79,13 @@
         ast.return_val.push(traverse(ast.children[stmt]));
       }
     }
-    return ast.return_val.join('');
+
+    for (var i = 0; i < ast.return_val.length; i++) {
+      if (ast.return_val[i] === undefined) {
+        ast.return_val.splice(i, 1);
+      }
+    }
+    return ast.return_val.join('\n');
   };
   var traverse_relational_expr = function(ast) {
     l = traverse(ast.child_objs["l"]);
