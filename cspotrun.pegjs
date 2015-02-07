@@ -86,6 +86,21 @@
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
   };
+  var traverse_negative = function(ast) {
+    
+    // First we convert to string to check for a decimal
+    // to infer type (float/int) and coerce back to the
+    // appropriate type.
+    var neg_name = ast.name.toString();
+    if (neg_name.match(/\./)) {
+      neg_name = parseFloat(ast.name);
+    } else {
+      neg_name = parseInt(ast.name);
+    }
+
+    // Then we return the coerced result.
+    return traverse({construct: "number", name: neg_name});
+  };
   var traverse_number = function(ast) {
     return ast.name
   };
@@ -159,6 +174,7 @@
         case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
+        case "negative"         : return traverse_negative(ast);
         case "proc_call"        : return traverse_proc_call(ast);
         case "proc_def"         : return traverse_proc_def(ast);
         case "program"          : return traverse_program(ast);
@@ -298,7 +314,7 @@ subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_o
                / neg
                
                // Little hack here to display negatives, instead of more complicated tree.  
-neg            = MINUS n:mult { return {construct: "negative", name: '-' + n.name} ;}
+neg            = MINUS n:mult { return {construct: "negative", name: n.name * -1} ;}
                / mult
  
 mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
