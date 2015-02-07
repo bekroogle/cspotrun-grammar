@@ -67,6 +67,12 @@
   var traverse_list_item = function(ast) {
     return symbol_table.li_lookup(ast.child_objs["id"].name, traverse(ast.child_objs["index"]));
   };
+  var traverse_list_item_assign = function(ast) {
+    var li_id = ast.child_objs.id;
+    var li_index = traverse(ast.child_objs.index);
+    var new_value = traverse(ast.child_objs.value);
+    symbol_table[li_id].val[li_index] = new_value;
+  };
   var traverse_list_lit = function(ast) {
     var list = [traverse(ast.child_objs["head"])];
 
@@ -150,6 +156,7 @@
         case "declare"          : return traverse_declare(ast);
         case "initialize"       : return traverse_initialize(ast);
         case "list_item"        : return traverse_list_item(ast);
+        case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
         case "proc_call"        : return traverse_proc_call(ast);
@@ -221,7 +228,7 @@ assign_pred    = ASSIGN_OP e:expr { return e; }
 assign_stmt    = list_item_assign 
                / scalar_assign
 
-list_item_assign= LET li:list_item EQUALS e:expr { return { construct: "assign", name: "assign", child_objs: {list_item: li, value: e}, children: [li, e]};}
+list_item_assign= LET li:list_item EQUALS e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
 
