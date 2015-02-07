@@ -199,54 +199,58 @@
 program        = stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement      = stmt:( label_stmt
-                      / proc_def
-                      / proc_call
+                      / proc_def            /* proc myproc: <stmts> end proc */
+                      / proc_call           /* do myproc */
                       / goto_stmt
-                      / declare_stmt
-                      / assign_stmt
-                      / ifthen_stmt
-                      / loop_stmt
-                      / print_stmt) WSNL { return stmt; }
+                      / declare_stmt        /* int i [or] int i = 3 */
+                      / assign_stmt         /* let i = i + 1 */
+                      / ifthen_stmt         /* if i < 2: <stmts> end if */
+                      / loop_stmt           /* while i < 2: <stmts> repeat */
+                      / print_stmt) WSNL { return stmt; } /* print 2+2 */
 
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
 
-proc_def       = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
+proc_def         = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
 
-proc_header    = PROC i:ID COLON WSNL { return i; }
+proc_header      = PROC i:ID COLON WSNL { return i; }
 
-proc_body      = stmts:statement* { return {construct: "program", name: "proc body", children: stmts};}
+proc_body        = stmts:statement* { return {construct: "program", name: "proc body", children: stmts};}
 
-end_proc       = END PROC
+end_proc         = END PROC
 
 proc_call        = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
 
-label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
+label_stmt       = l:label { return {construct: "label_stmt", name: l.name}; }
 
-label          = LESS i:ID GREATER { return i; }
+label            = LESS i:ID GREATER { return i; }
 
-goto_stmt      = GOTO l:label { return { name: "goto", child_objs: {label: l}, children: [l]}; }
+goto_stmt        = GOTO l:label { return { name: "goto", child_objs: {label: l}, children: [l]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * VARIABLE HANDLING CONSTRUCTS    *
  * * * * * * * * * * * * * * * * * */
 
-declare_stmt   = initialize
-               / declare
+declare_stmt     = initialize
+                 / declare
 
-initialize   = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t.name, id: i.name, value: a}, children: [t, i, a]};}
+initialize       = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t.name, id: i.name, value: a}, children: [t, i, a]};}
 
-declare = t:typename WS i:ID { return { construct: "declare", name: "declare", child_objs: {typename: t.name, id: i.name}, children: [t, i]}; }
+declare          = t:typename WS i:ID { return { construct: "declare", name: "declare", child_objs: {typename: t.name, id: i.name}, children: [t, i]}; }
 
-assign_pred    = ASSIGN_OP e:expr { return e; }
+assign_pred      = ASSIGN_OP e:expr { return e; }
 
-assign_stmt    = list_item_assign 
-               / scalar_assign
+assign_stmt      = list_item_assign 
+                 / scalar_assign
 
-list_item_assign= LET li:list_item EQUALS e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
+list_item_assign = LET li:list_item EQUALS e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
-scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
+scalar_assign    = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
+
+
+
+
 
 /* * * * * * * * * * * * * * * * * * 
  * CONDITIONAL EXECUTION CONSTRUCTS*
@@ -359,17 +363,15 @@ relational_expr= l:expr op:rel_op r:expr {return {construct: "relational_expr", 
 
 rel_op         = EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
 
-// List of reserved words.  
-keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE
-
-typename       = TEXT / INT / REAL / LIST
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       = IF / TRUE / FALSE / THEN / END / PROMPT / GOTO / REPEAT / WHILE / LET / typename
+keywords       =  DO / END / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / THEN / TRUE /  WHILE / typename
 
-typename       = tn:(TEXT / INT / REAL / LIST) { return { name: tn }; }
+typename      = TEXT / INT / REAL / LIST 
+
+
 // Identifier for variables, labels, etc. FolloWS C++ rules.
 ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
@@ -416,9 +418,9 @@ WHILE          = 'while'       WS  { return text().trim(); }
 
 // Typenames
 INT            = 'int'         WS  { return text().trim(); }
+LIST           = 'list'        WS  { return text().trim(); }
 REAL           = 'real'        WS  { return text().trim(); }
 TEXT           = 'text'        WS  { return text().trim(); }
-LIST           = 'list'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
 WS             = [ \t]*
