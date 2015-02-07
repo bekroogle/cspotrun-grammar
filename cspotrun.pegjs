@@ -67,6 +67,9 @@
   var traverse_print_stmt = function(ast) {
     return traverse(ast.child_objs["expression"]);
   };
+  var traverse_prompt_stmt = function(ast) {
+    return prompt(ast.name);
+  };
   var traverse_proc_call = function(ast) {
     return traverse(symbol_table.lookup(ast.child_objs["id"]));
   };
@@ -103,7 +106,13 @@
   var traverse_string_expr = function(ast) {
     return ast.name;
   };
-
+  var traverse_string_cat = function(ast) {
+    var new_string = traverse(ast.child_objs["l"]) + traverse(ast.child_objs["r"]);
+    return new_string;
+  };
+  var traverse_string_var = function(ast) {
+    return symbol_table.lookup(ast.name);
+  };
   traverse = function(ast) {
     ast.return_val = [];
     if (ast.construct) {
@@ -122,8 +131,11 @@
         case "num_var"          : return traverse_num_var(ast);
         case "number"           : return traverse_number(ast);
         case "print_stmt"       : return traverse_print_stmt(ast);
+        case "prompt_stmt"      : return traverse_prompt_stmt(ast);
         case "relational_expr"  : return traverse_relational_expr(ast);
+        case "string_cat"       : return traverse_string_cat(ast);
         case "string_expr"      : return traverse_string_expr(ast);
+        case "string_var"       : return traverse_string_var(ast);
         default: console.error("AST Traversal error: ");
                  console.error(ast);
       }
@@ -157,13 +169,11 @@ proc_body      = stmts:statement* { return {construct: "program", name: "proc bo
 end_proc       = END PROC
 
 proc_call        = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
-// Target of goto statements.
+
 label_stmt     = l:label { return {construct: "label_stmt", name: l.name}; }
 
-// Used in label_stmt and goto_stmt.
 label          = LESS i:ID GREATER { return i; }
 
-// Transfer flow of control to the node of the tree with the given label.
 goto_stmt      = GOTO l:label { return { name: "goto", child_objs: {label: l}, children: [l]}; }
 
 /* * * * * * * * * * * * * * * * * * 
@@ -186,8 +196,10 @@ list_itm_assign= LET li:list_itm EQUALS e:expr { return { construct: "assign", n
 
 scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
 
+/* * * * * * * * * * * * * * * * * * 
+ * CONDITIONAL EXECUTION CONSTRUCTS*
+ * * * * * * * * * * * * * * * * * */
 
-/* CONDITIONAL EXECUTION CONSTRUCTS */
 // If-then construct
 ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if-then", name: "if-then", children: [ip, tp]};}
 
@@ -201,14 +213,17 @@ end_if         = END IF
 loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
 loop_header    = WHILE cond:bool_expr COLON WSNL{ return cond;}
-  // return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]}; }
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
 end_loop       = REPEAT
 
-/* I/O CONSTRUCTS */
+/* * * * * * * * * * * * * * * * * * 
+ * I/O CONSTRUCTS                  *
+ * * * * * * * * * * * * * * * * * */
 print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
+
+prompt_stmt    = PROMPT s:string_expr { return {construct: "prompt_stmt", name: s.name};}
 
 /* * * * * * * * * * * * * * * * * * 
  * EXPRESSIONS                     *
@@ -218,10 +233,17 @@ print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print",
 //   Left associative operations are refactored into 
 //   commutative operations algebraically. (Subract => add a negative,
 //   divide => multiply by reciprocal).
-expr           = num_expr
-               / string_expr 
+expr           = prompt_stmt
+               / num_expr
+               / string_cat
+
+string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
+               / string_expr
 
 string_expr    = DBL_QUOTE str:not_quote* DBL_QUOTE { return { construct: "string_expr", name: str.join('')}; }
+               / string_var
+
+string_var     = id:ID {return {construct: "string_var", name: id.name};}
 
 not_quote      = ! DBL_QUOTE char:. { return char; }
 
