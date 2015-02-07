@@ -21,6 +21,12 @@
     lookup: function(key) {
       return this[key].val;
     },
+    li_lookup: function(key, index) {
+      return this[key].val[index];
+    },
+    typeof: function(key) {
+      return this[key].type;
+    },
     proc: function(ast) {
       decircularize(ast.child_objs["body"]);
       this[ast.child_objs["id"]] = {"type": "procedure", "val": ast.child_objs["body"]};
@@ -36,6 +42,9 @@
   var traverse_bool_lit = function(ast) {
     if (ast.name === "true") return true;
     else return false;
+  };
+  var traverse_csv = function(ast) {
+
   };
   var traverse_declare = function(ast) {
     ast["child_objs"]["value"] = {construct: "null", name: null};
@@ -55,6 +64,19 @@
     // }
     return ast.return_val.join('');
   };
+  var traverse_list_item = function(ast) {
+    return symbol_table.li_lookup(ast.child_objs["id"].name, traverse(ast.child_objs["index"]));
+  };
+  var traverse_list_lit = function(ast) {
+    var list = [traverse(ast.child_objs["head"])];
+
+    if (ast.child_objs["tail"]) {
+      for (var i = 0; i< ast.child_objs["tail"].length; i++) {
+        list.push(traverse(ast.child_objs["tail"][i]));
+      }
+    }
+    return list;
+  };
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
   };
@@ -62,7 +84,11 @@
     return ast.name
   };
   var traverse_num_var = function(ast) {
-    return symbol_table.lookup(ast.name);
+    switch (symbol_table.typeof(ast.name)) {
+      case "int": /* Falls through */
+      case "real": return symbol_table.lookup(ast.name);
+      default: expected("scalar value");
+    }
   };
   var traverse_print_stmt = function(ast) {
     return traverse(ast.child_objs["expression"]);
@@ -120,8 +146,11 @@
         case "add"              : return traverse_add(ast);
         case "assign"           : return traverse_assign(ast);
         case "bool_lit"         : return traverse_bool_lit(ast);
+        case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "initialize"       : return traverse_initialize(ast);
+        case "list_item"        : return traverse_list_item(ast);
+        case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
         case "proc_call"        : return traverse_proc_call(ast);
         case "proc_def"         : return traverse_proc_def(ast);
@@ -189,10 +218,10 @@ declare = t:typename WS i:ID { return { construct: "declare", name: "declare", c
 
 assign_pred    = ASSIGN_OP e:expr { return e; }
 
-assign_stmt    = list_itm_assign 
+assign_stmt    = list_item_assign 
                / scalar_assign
 
-list_itm_assign= LET li:list_itm EQUALS e:expr { return { construct: "assign", name: "assign", child_objs: {list_item: li, value: e}, children: [li, e]};}
+list_item_assign= LET li:list_item EQUALS e:expr { return { construct: "assign", name: "assign", child_objs: {list_item: li, value: e}, children: [li, e]};}
 
 scalar_assign  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
 
@@ -235,7 +264,12 @@ prompt_stmt    = PROMPT s:string_expr { return {construct: "prompt_stmt", name: 
 //   divide => multiply by reciprocal).
 expr           = prompt_stmt
                / num_expr
+               / list_lit
                / string_cat
+
+list_lit       = OPEN_BRACKET head:expr tail:comma_sep_expr* CLOSE_BRACKET { return {construct: "list_lit", name: "list", child_objs: {"head": head, "tail": tail}, children: [head, tail]};}
+
+comma_sep_expr = COMMA e:expr { return e; }
 
 string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
@@ -283,10 +317,10 @@ float          = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 
 integer        = d:DIGIT+             WS  { return text().trim(); }
 
-num_var        = list_itm
+num_var        = list_item
                / scalar_num
 
-list_itm       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_itm", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
+list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
 
 scalar_num     = i:ID { return {construct: "num_var", name: i.name};}
 
@@ -319,8 +353,9 @@ ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "
 DIGIT          = [0-9]
 
 // Punctuation:
-COLON          = operator:':'  WS  { return operator; }
 CLOSE_BRACKET  = operator:']'  WS  { return operator; }
+COLON          = operator:':'  WS  { return operator; }
+COMMA          = operator:","  WS  { return operator; }
 DBL_QUOTE      = operator:'"'  WS  { return operator; }
 OPEN_BRACKET   = operator:'['  WS  { return operator; }
 SPOT "decimal" = operator:'.'  WS  { return operator; }
