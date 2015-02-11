@@ -308,9 +308,10 @@ prompt_stmt    = PROMPT s:string_expr { return {construct: "prompt_stmt", name: 
 //   commutative operations algebraically. (Subract => add a negative,
 //   divide => multiply by reciprocal).
 expr           = prompt_stmt
+               / string_cat
                / num_expr
                / list_lit
-               / string_cat
+               
 
 list_lit       = OPEN_BRACKET head:expr tail:comma_sep_expr* CLOSE_BRACKET { return {construct: "list_lit", name: "list", child_objs: {"head": head, "tail": tail}, children: [head, tail]};}
 
