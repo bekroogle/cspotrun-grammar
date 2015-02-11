@@ -369,7 +369,7 @@ rel_op         = EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
 // List of reserved words.  
 keywords       =  DO / END / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / THEN / TRUE /  WHILE / typename
 
-typename      = TEXT / INT / REAL / LIST 
+typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
 
 // Identifier for variables, labels, etc. FolloWS C++ rules.
