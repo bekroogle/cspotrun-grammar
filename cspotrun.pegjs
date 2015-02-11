@@ -422,4 +422,4 @@ LIST           = 'list'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
 WS             = [ \t]*
-WSNL             = [ \t\n]*
+WSNL             = [ \t\n\r]*
