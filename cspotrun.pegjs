@@ -14,9 +14,20 @@
       }
     }
   };
+  
   symbol_table = {
+    // Insert an entry into the symbol table.
     insert: function(ast) {
-      this[ast.child_objs["id"]] = {"type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
+
+      // Set the type field:
+      this[ast.child_objs["id"]] = {"type": ast.child_objs["typename"]}
+      
+      // Set the val field, coercing as necessary, based on the type field:
+      switch (this[ast.child_objs["id"]].type) {
+        case "int"  : this[ast.child_objs["id"]].val= parseInt(traverse(ast.child_objs["value"])); break;
+        case "real" : this[ast.child_objs["id"]].val= parseFloat(traverse(ast.child_objs["value"])); break;
+        default: this[ast.child_objs["id"]].val= traverse(ast.child_objs["value"]).toString(); break;
+      }
     },
     lookup: function(key) {
       return this[key].val;
