@@ -50,6 +50,11 @@
     ast["child_objs"]["value"] = {construct: "null", name: null};
     symbol_table.insert(ast);
   };
+  var traverse_if_then = function(ast) {
+    if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
+      return traverse(ast.child_objs["then_part"]);
+    }
+  };
   var traverse_initialize = function(ast) {
     symbol_table.insert(ast);
     // symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
@@ -169,6 +174,7 @@
         case "bool_lit"         : return traverse_bool_lit(ast);
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
+        case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
         case "list_item"        : return traverse_list_item(ast);
         case "list_item_assign" : return traverse_list_item_assign(ast);
@@ -257,7 +263,7 @@ scalar_assign    = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name
  * * * * * * * * * * * * * * * * * */
 
 // If-then construct
-ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if-then", name: "if-then", children: [ip, tp]};}
+ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
 
 if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
 
