@@ -24,9 +24,10 @@
       
       // Set the val field, coercing as necessary, based on the type field:
       switch (this[ast.child_objs["id"]].type) {
-        case "int"  : this[ast.child_objs["id"]].val= parseInt(traverse(ast.child_objs["value"])); break;
-        case "real" : this[ast.child_objs["id"]].val= parseFloat(traverse(ast.child_objs["value"])); break;
-        default: this[ast.child_objs["id"]].val= traverse(ast.child_objs["value"]).toString(); break;
+        case "int"  : this[ast.child_objs["id"]].val = parseInt(traverse(ast.child_objs["value"])); break;
+        case "real" : this[ast.child_objs["id"]].val = parseFloat(traverse(ast.child_objs["value"])); break;
+        case "text" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]).toString(); break;
+        case "list" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]); break;
       }
     },
     lookup: function(key) {
