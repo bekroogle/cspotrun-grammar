@@ -24,7 +24,22 @@ describe("Print Statements", function() {
     });
   });
 
+  describe("Proper spacing in contatenating", function() {
+    it("Should handle trailing spaces", function() {
+      var result = check('print "cool " + "cool"');
+      expect(result).to.equal('cool cool');
+    });
 
+    it("Should handle leading spaces", function() {
+      var result = check('print "cool" + " cool"');
+      expect(result).to.equal('cool cool');
+    });
+  });
+
+    it("Should handle concatenated spaces", function() {
+      var result = check('print "cool" + " " + "cool"');
+      expect(result).to.equal('cool cool');
+    });
 
   it("should print simple addition expressions", function() {
     

@@ -325,9 +325,9 @@ string_expr    = string:(DBL_QUOTE str_part DBL_QUOTE) WS { var myre = /\"/g; re
 
 string_var     = id:ID {return {construct: "string_var", name: id.name};}
 
-str_part       = n:not_quote* { console.log(text().substring(0,text().length-1));return text();}
+str_part       = n:not_quote* { return text();}
 
-not_quote      = ! DBL_QUOTE char:. { console.log(char);return char; }
+not_quote      = ! DBL_QUOTE char:. { return char; }
 
 
 num_expr       = add
