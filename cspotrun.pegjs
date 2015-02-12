@@ -197,7 +197,7 @@
         case "program"          : return traverse_program(ast);
         case "multiply"         : return traverse_mult(ast);
         case "null"             : return null;
-        case "num_var"          : return traverse_num_var(ast);
+        case "variable"         : return traverse_num_var(ast);
         case "number"           : return traverse_number(ast);
         case "print_stmt"       : return traverse_print_stmt(ast);
         case "prompt_stmt"      : return traverse_prompt_stmt(ast);
@@ -226,7 +226,7 @@ statement      = stmt:( label_stmt
                       / print_stmt) WSNL { return stmt; } /* print 2+2 */
 
 
-line_comment     = HASH (!NL .)* WSNL
+line_comment "comment"= HASH (!NL .)* WSNL
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
@@ -305,8 +305,7 @@ prompt_stmt    = PROMPT s:string_expr { return {construct: "prompt_stmt", name: 
 //   commutative operations algebraically. (Subract => add a negative,
 //   divide => multiply by reciprocal).
 expr           = prompt_stmt
-               / string_cat
-               / num_expr
+               / prime_expr
                / list_lit
                
 
@@ -317,17 +316,18 @@ comma_sep_expr = COMMA e:expr { return e; }
 string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
 
-string_expr    = string:(DBL_QUOTE str_part DBL_QUOTE) WS { var myre = /\"/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
+string_expr    = string_lit 
                / string_var
 
-string_var     = id:ID {return {construct: "string_var", name: id.name};}
+string_lit     = string:(DBL_QUOTE str_part DBL_QUOTE) WS { var myre = /\"/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
+
+string_var     = id:ID &{true} {return {construct: "string_var", name: id.name};}
 
 str_part       = n:not_quote* { return text();}
 
 not_quote      = ! DBL_QUOTE char:. { return char; }
 
-
-num_expr       = add
+prime_expr           = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
                / subtract
@@ -346,29 +346,30 @@ div            = num:recip denom:div { return {construct: "multiply", name: '*',
                / recip
  
                // Little hack here to display reciprocals, instead of more complicated tree. 
-recip          = DIVIDE n:number { return {construct: "reciprocal", name: "1/" + n.name}; }
+recip          = DIVIDE n:atom { return {construct: "reciprocal", name: "1/" + n.name}; }
                / parens
  
 parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
-               / number
+               / atom
                
-number         = n:num_lit { return {construct: "number", name: n}; }
-               / num_var
+atom           = n:num_lit { return {construct: "number", name: n}; }
+               / var
 
 num_lit        = f:float { return parseFloat(f); }
                / i:integer { return parseInt(i); }
 
-float          = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
+float  "real"  = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 
-integer        = d:DIGIT+             WS  { return text().trim(); }
+integer "integer" 
+               = d:DIGIT+             WS  { return text().trim(); }
 
-num_var        = list_item
-               / scalar_num
+var            = list_item
 
 list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
+                / single
 
-scalar_num     = i:ID {console.log(i); return {construct: "num_var", name: i.name};}
-
+single          = i:ID {return {construct: "variable", name: i.name};}
+                / string_expr
 
 // Boolean expressions:
 bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
@@ -391,7 +392,7 @@ typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
 
 // Identifier for variables, labels, etc. FolloWS C++ rules.
-ID             = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
+ID "identifier" = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
 DIGIT          = [0-9]
 
@@ -443,7 +444,7 @@ TEXT           = 'text'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
 WS             = WHITESPACE*
-WHITESPACE     = [ \t]
+WHITESPACE "whitespace"    = [ \t]
                /line_comment
 NL             = [\n\r]
 WSNL           = (WHITESPACE/NL)*
