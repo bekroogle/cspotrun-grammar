@@ -36,7 +36,7 @@
     li_lookup: function(key, index) {
       return this[key].val[index];
     },
-    typeof: function(key) {
+    type_of: function(key) {
       return this[key].type;
     },
     proc: function(ast) {
@@ -122,11 +122,7 @@
     return ast.name
   };
   var traverse_num_var = function(ast) {
-    switch (symbol_table.typeof(ast.name)) {
-      case "int": /* Falls through */
-      case "real": return symbol_table.lookup(ast.name);
-      default: expected("scalar value");
-    }
+    return symbol_table.lookup(ast.name);
   };
   var traverse_print_stmt = function(ast) {
     return traverse(ast.child_objs["expression"]);
@@ -175,7 +171,9 @@
     return new_string;
   };
   var traverse_string_var = function(ast) {
-    return symbol_table.lookup(ast.name);
+    
+      return symbol_table.lookup(ast.name);
+    
   };
   traverse = function(ast) {
     ast.return_val = [];
@@ -369,7 +367,7 @@ num_var        = list_item
 
 list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
 
-scalar_num     = i:ID { return {construct: "num_var", name: i.name};}
+scalar_num     = i:ID {console.log(i); return {construct: "num_var", name: i.name};}
 
 
 // Boolean expressions:
