@@ -152,7 +152,7 @@
         ast.return_val.splice(i, 1);
       }
     }
-    return ast.return_val.join('\n');
+    return ast.return_val.join('');
   };
   var traverse_relational_expr = function(ast) {
     l = traverse(ast.child_objs["l"]);
@@ -320,12 +320,14 @@ comma_sep_expr = COMMA e:expr { return e; }
 string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
 
-string_expr    = DBL_QUOTE str:not_quote* DBL_QUOTE { return { construct: "string_expr", name: str.join('')}; }
+string_expr    = string:(DBL_QUOTE str_part DBL_QUOTE) WS { var myre = /\"/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
                / string_var
 
 string_var     = id:ID {return {construct: "string_var", name: id.name};}
 
-not_quote      = ! DBL_QUOTE char:. { return char; }
+str_part       = n:not_quote* { console.log(text().substring(0,text().length-1));return text();}
+
+not_quote      = ! DBL_QUOTE char:. { console.log(char);return char; }
 
 
 num_expr       = add
@@ -400,7 +402,7 @@ DIGIT          = [0-9]
 CLOSE_BRACKET  = operator:']'  WS  { return operator; }
 COLON          = operator:':'  WS  { return operator; }
 COMMA          = operator:","  WS  { return operator; }
-DBL_QUOTE      = operator:'"'  WS  { return operator; }
+DBL_QUOTE      = operator:'"'      { return operator; }
 OPEN_BRACKET   = operator:'['  WS  { return operator; }
 SPOT "decimal" = operator:'.'  WS  { return operator; }
 
