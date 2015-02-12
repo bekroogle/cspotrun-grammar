@@ -12,28 +12,38 @@ describe("Print Statements", function() {
   
   describe("Printing concatenations", function() {
     it("Multiple print <string> should output to same line ", function() {
-      var result = check('print "hello "\
-        print "world."');
+      var result = check('print "hello "\nprint "world."');
       expect(result).to.equal('hello world.');
     });
 
     it("Multiple print <number> should output to same line ", function() {
-      var result = check('print 3\
-        print 5');
+      var result = check('print 3\nprint 5');
       expect(result).to.equal('35');
     });
   });
 
   describe("Proper spacing in contatenating", function() {
-    it("Should handle trailing spaces", function() {
+    it("Should handle trailing spaces in string literals", function() {
       var result = check('print "cool " + "cool"');
       expect(result).to.equal('cool cool');
     });
 
-    it("Should handle leading spaces", function() {
+    it("Should handle trailing spaces in string variables", function() {
+      var result = check('text t = "cool "\nprint t + t');
+      expect(result).to.equal('cool cool ');
+    });
+
+    it("Should handle leading spaces in string literals", function() {
       var result = check('print "cool" + " cool"');
       expect(result).to.equal('cool cool');
     });
+
+    it("Should handle leading spaces in string variables", function() {
+      var result = check('text t = " cool"\nprint t + t');
+      expect(result).to.equal(' cool cool');
+    });
+
+
   });
 
     it("Should handle concatenated spaces", function() {
@@ -65,10 +75,25 @@ describe("Print Statements", function() {
 
   it("should print values of string variables", function() {
     var result = check(
-    'text t = "hello world"\
-     print t'
-    );
+      'text t = "hello world"\
+      print t');
     expect(result).to.equal("hello world");
+  });
+});
+
+describe("Handle comments", function() {
+  it("should effectively ignore a single comment", function() {
+    var result = check('# nobody here but us comments');
+    expect(result).to.equal('');
+  });
+
+  it("should allow a program to start with a comment", function() {
+    var result=check('# cool\nprint "cool"');
+    expect(result).to.equal('cool');
+  });
+  it("should allow a program to end with a comment", function() {
+    var result=check('print "cool"\n# prog is over, bud.');
+    expect(result).to.equal('cool');
   });
 });
 

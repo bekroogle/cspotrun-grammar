@@ -184,6 +184,7 @@
         case "add"              : return traverse_add(ast);
         case "assign"           : return traverse_assign(ast);
         case "bool_lit"         : return traverse_bool_lit(ast);
+        case "comment"          : return null;
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "if_then"          : return traverse_if_then(ast);
@@ -214,7 +215,7 @@
 }
 // Grammar:
 
-program        = stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
+program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement      = stmt:( label_stmt
                       / proc_def            /* proc myproc: <stmts> end proc */
@@ -226,6 +227,8 @@ statement      = stmt:( label_stmt
                       / loop_stmt           /* while i < 2: <stmts> repeat */
                       / print_stmt) WSNL { return stmt; } /* print 2+2 */
 
+
+line_comment     = HASH (!NL .)* WSNL
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
@@ -265,10 +268,6 @@ assign_stmt      = list_item_assign
 list_item_assign = LET li:list_item EQUALS e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 scalar_assign    = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
-
-
-
-
 
 /* * * * * * * * * * * * * * * * * * 
  * CONDITIONAL EXECUTION CONSTRUCTS*
@@ -403,6 +402,7 @@ CLOSE_BRACKET  = operator:']'  WS  { return operator; }
 COLON          = operator:':'  WS  { return operator; }
 COMMA          = operator:","  WS  { return operator; }
 DBL_QUOTE      = operator:'"'      { return operator; }
+HASH           = operator:"#"      { return operator; }
 OPEN_BRACKET   = operator:'['  WS  { return operator; }
 SPOT "decimal" = operator:'.'  WS  { return operator; }
 
@@ -444,5 +444,8 @@ REAL           = 'real'        WS  { return text().trim(); }
 TEXT           = 'text'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
-WS             = [ \t]*
-WSNL             = [ \t\n\r]*
+WS             = WHITESPACE*
+WHITESPACE     = [ \t]
+               /line_comment
+NL             = [\n\r]
+WSNL           = (WHITESPACE/NL)*
