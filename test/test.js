@@ -95,24 +95,36 @@ describe("COMMENTS", function() {
 });
 
 describe("SYMBOL TABLE", function() {
-  it("should properly cast ints", function() {
-    var result = check('int i = "3.14"\
-      print i');
-    expect(result).to.equal('3');
-  });
-  it("should properly cast floats", function() {
-    var result = check('real r = "3.14"\
-      print r');
-    expect(result).to.equal('3.14');
-  });
-  it("should properly cast strings", function() {
-    var result = check('text t = 3.14\
-      print t');
-    expect(result).to.equal('3.14');
-  });
-  it("list l = [1,2,3]", function() {
+  describe("Initialized variables", function() {
+    it("should properly cast ints", function() {
+      var result = check('int i = "3.14"\
+        print i');
+      expect(result).to.equal('3');
+    });
+    it("should properly cast floats", function() {
+      var result = check('real r = "3.14"\
+        print r');
+      expect(result).to.equal('3.14');
+    });
+    it("should properly cast strings", function() {
+      var result = check('text t = 3.14\
+        print t');
+      expect(result).to.equal('3.14');
+    });
+    it("list l = [1,2,3]", function() {
     var result = check('list l = [1,2,3] print l');
     expect(result).to.equal('1,2,3');
+  });
+  });
+  describe("Assignments", function() {
+    it("simple assignments to int vars", function() {
+      var result = check('int i\nlet i = 2')
+      expect(symbol_table['i']).to.eql({type: 'int', val: 2});
+    });
+    it("expression assignments to int vars", function() {
+      var result = check('int i\nlet i = 2 + 2')
+      expect(symbol_table['i']).to.eql({type: 'int', val: 4});
+    });
   });
 });
   //   var result = traverse(parse('int i = 3 print i*2'));
