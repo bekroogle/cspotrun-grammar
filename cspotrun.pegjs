@@ -261,9 +261,7 @@ declare          = t:typename WS i:ID { return { construct: "declare", name: "de
 assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt      = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
-// list_item_assign = LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
-
-
+                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * CONDITIONAL EXECUTION CONSTRUCTS*
