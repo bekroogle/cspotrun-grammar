@@ -26,7 +26,7 @@
       switch (this[ast.child_objs["id"]].type) {
         case "int"  : this[ast.child_objs["id"]].val = parseInt(traverse(ast.child_objs["value"])); break;
         case "real" : this[ast.child_objs["id"]].val = parseFloat(traverse(ast.child_objs["value"])); break;
-        case "text" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]).toString(); break;
+        case "text" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]) === null ? null : traverse(ast.child_objs["value"]).toString(); break;
         case "list" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]); break;
       }
     },
@@ -49,7 +49,14 @@
       traverse(ast.child_objs["right"]);
   };
   var traverse_assign = function(ast) {
-    symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]);
+    
+
+    switch (symbol_table[ast.child_objs["id"]].type) {
+      case "int"   : symbol_table[ast.child_objs["id"]].val = parseInt(traverse(ast.children[1]));   break;
+      case "real"  : symbol_table[ast.child_objs["id"]].val = parseFloat(traverse(ast.children[1])); break;
+      case "text"  : symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]).toString();  break;
+      default      : symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]);             break;
+    }
   };
   var traverse_bool_lit = function(ast) {
     if (ast.name === "true") return true;
@@ -312,16 +319,29 @@ comma_sep_expr = COMMA e:expr { return e; }
 string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
 
-string_expr    = string_lit 
+string_expr    = string_lit
+               / ENDL { return {construct: "string_expr", name: "\n"}; } 
                / string_var
 
-string_lit     = string:(DBL_QUOTE str_part DBL_QUOTE) WS { var myre = /\"/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
+string_lit     = double_quoted_str
+               / single_quoted_str
+
+double_quoted_str
+               = string:(DBL_QUOTE dbl_quo_str_part DBL_QUOTE) WS { var myre = /\"/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
+
+single_quoted_str
+               = string:(QUOTE quo_str_part QUOTE) WS { var myre = /\'/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
 
 string_var     = id:ID &{true} {return {construct: "string_var", name: id.name};}
 
-str_part       = n:not_quote* { return text();}
+dbl_quo_str_part
+               = n:(! DBL_QUOTE .)* { return text(); }
 
-not_quote      = ! DBL_QUOTE char:. { return char; }
+quo_str_part   = n:(! QUOTE .)* { return text(); }
+
+
+
+//not_quote      = ! DBL_QUOTE char:. { return char; }
 
 prime_expr           = add
 
@@ -382,7 +402,7 @@ rel_op         = EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       =  DO / END / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / THEN / TRUE /  WHILE / typename
+keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / THEN / TRUE /  WHILE / typename
 
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
@@ -400,6 +420,7 @@ DBL_QUOTE      = operator:'"'      { return operator; }
 HASH           = operator:"#"      { return operator; }
 OPEN_BRACKET   = operator:'['  WS  { return operator; }
 SPOT "decimal" = operator:'.'  WS  { return operator; }
+QUOTE          = operator:"'"      { return operator; }
 
 // Arithmetic operators:
 ASSIGN_OP      = operator:'='  WS  { return operator; }
@@ -420,6 +441,7 @@ LESS           = '<'           WS  { return text().trim(); }
 // Keywords
 DO             = 'do'          WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
+ENDL           = 'endl'        WS  { return text().trim(); }
 FALSE          = 'false'       WS  { return text().trim(); }
 GOTO           = 'goto'        WS  { return text().trim(); }
 IF             = 'if'          WS  { return text().trim(); }
