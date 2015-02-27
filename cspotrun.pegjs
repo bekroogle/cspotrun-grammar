@@ -238,7 +238,8 @@ line_comment "comment"= HASH (!NL .)* WSNL
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
 
-proc_def         = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
+proc_def "procedure" 
+                 = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
 
 proc_header      = PROC i:ID COLON WSNL { return i; }
 
@@ -246,7 +247,8 @@ proc_body        = stmts:statement* { return {construct: "program", name: "proc 
 
 end_proc         = END PROC
 
-proc_call        = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
+proc_call "procedure call"
+                 = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
 
 label_stmt       = l:label { return {construct: "label_stmt", name: l.name}; }
 
@@ -258,7 +260,8 @@ goto_stmt        = GOTO l:label { return { name: "goto", child_objs: {label: l},
  * VARIABLE HANDLING CONSTRUCTS    *
  * * * * * * * * * * * * * * * * * */
 
-declare_stmt     = initialize
+declare_stmt "declaration"
+                = initialize
                  / declare
 
 initialize       = t:typename WS i:ID a:assign_pred { return { construct: "initialize", name: "initialize", child_objs: {typename: t.name, id: i.name, value: a}, children: [t, i, a]};}
@@ -267,7 +270,8 @@ declare          = t:typename WS i:ID { return { construct: "declare", name: "de
 
 assign_pred      = ASSIGN_OP e:expr { return e; }
 
-assign_stmt      = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
+assign_stmt "assignment"
+                 = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
                  / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
@@ -275,7 +279,8 @@ assign_stmt      = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name
  * * * * * * * * * * * * * * * * * */
 
 // If-then construct
-ifthen_stmt    = ip:if_part tp:then_part end_if { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
+ifthen_stmt "if then"
+               = ip:if_part tp:then_part end_if { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
 
 if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
 
@@ -284,7 +289,8 @@ then_part      = stmts:statement* { return {construct: "program", name: "then pa
 end_if         = END IF 
 
 // Loop construct
-loop_stmt      = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
+loop_stmt "loop"
+               = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
 loop_header    = WHILE cond:bool_expr COLON WSNL{ return cond;}
 
@@ -295,9 +301,11 @@ end_loop       = REPEAT
 /* * * * * * * * * * * * * * * * * * 
  * I/O CONSTRUCTS                  *
  * * * * * * * * * * * * * * * * * */
-print_stmt     = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
+print_stmt "print statement"    
+               = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
 
-prompt_stmt    = PROMPT s:string_expr { return {construct: "prompt_stmt", name: s.name};}
+prompt_stmt "prompt"
+               = PROMPT s:string_expr { return {construct: "prompt_stmt", name: s.name};}
 
 /* * * * * * * * * * * * * * * * * * 
  * EXPRESSIONS                     *
@@ -323,7 +331,8 @@ string_expr    = string_lit
                / ENDL { return {construct: "string_expr", name: "\n"}; } 
                / string_var
 
-string_lit     = double_quoted_str
+string_lit "string literal"
+               = double_quoted_str
                / single_quoted_str
 
 double_quoted_str
