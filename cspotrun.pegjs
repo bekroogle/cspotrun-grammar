@@ -14,7 +14,21 @@
       }
     }
   };
-  
+
+  // Removes the child_objs fields (which are somewhat redundant) from a
+  // syntax tree.
+  remove_child_objs = function(ast) {
+    if (ast.child_objs) {
+      delete ast['child_objs'];
+    }
+
+    if (ast.children) {
+      for (var i = 0; i < ast.children.length; i++) {
+        remove_child_objs(ast.children[i]);
+      }
+    }
+  };
+
   symbol_table = {
     // Insert an entry into the symbol table.
     insert: function(ast) {
@@ -68,6 +82,11 @@
   var traverse_declare = function(ast) {
     ast["child_objs"]["value"] = {construct: "null", name: null};
     symbol_table.insert(ast);
+  };
+  var traverse_divide = function(ast) {
+    // This multiplies the numerator and denominator because the denominator
+    // will have been converted into the reciprocal of the denominator:
+    return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
   };
   var traverse_if_then = function(ast) {
     if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
@@ -157,6 +176,9 @@
     }
     return ast.return_val.join('');
   };
+  var traverse_recip = function(ast) {
+    return 1 / traverse(ast.child_objs["denominator"]);
+  };
   var traverse_relational_expr = function(ast) {
     l = traverse(ast.child_objs["l"]);
     r = traverse(ast.child_objs["r"]);
@@ -192,6 +214,7 @@
         case "comment"          : return null;
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
+        case "divide"           : return traverse_divide(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
         case "list_item"        : return traverse_list_item(ast);
@@ -208,6 +231,7 @@
         case "number"           : return traverse_number(ast);
         case "print_stmt"       : return traverse_print_stmt(ast);
         case "prompt_stmt"      : return traverse_prompt_stmt(ast);
+        case "recip"            : return traverse_recip(ast);
         case "relational_expr"  : return traverse_relational_expr(ast);
         case "string_cat"       : return traverse_string_cat(ast);
         case "string_expr"      : return traverse_string_expr(ast);
@@ -218,7 +242,9 @@
     }
   }
 }
-// Grammar:
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Grammar:                                                                *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
@@ -234,6 +260,7 @@ statement      = stmt:( label_stmt
 
 
 line_comment "comment"= HASH (!NL .)* WSNL
+
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
@@ -348,10 +375,6 @@ dbl_quo_str_part
 
 quo_str_part   = n:(! QUOTE .)* { return text(); }
 
-
-
-//not_quote      = ! DBL_QUOTE char:. { return char; }
-
 prime_expr           = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
@@ -367,11 +390,11 @@ neg            = MINUS n:mult { return {construct: "negative", name: n.name * -1
 mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
                / div
  
-div            = num:recip denom:div { return {construct: "multiply", name: '*', child_objs: {numerator: num, denominator: denom}, children: [num, denom]}; }
+div            = num:recip denom:div { return {construct: "divide", name: '*', child_objs: {numerator: num, denominator: denom}, children: [num, denom]}; }
                / recip
  
                // Little hack here to display reciprocals, instead of more complicated tree. 
-recip          = DIVIDE n:atom { return {construct: "reciprocal", name: "1/" + n.name}; }
+recip          = DIVIDE n:atom { return {construct: "recip", name: "/", child_objs: {numerator: {construct: "number", name: 1}, denominator: n}, children:[{construct: "number", name: 1}, n]};}
                / parens
  
 parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
