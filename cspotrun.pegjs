@@ -107,6 +107,13 @@
     // }
     return ast.return_val.join('');
   };
+  var traverse_list_elem = function(ast) {
+    var val_list = symbol_table.lookup(ast.child_objs["id"].name);
+    var spec_list = ast.child_objs["spec"];
+    var elem_string = "val_list" + spec_list;
+    return eval(elem_string);
+
+  };
   var traverse_list_item = function(ast) {
     return symbol_table.li_lookup(ast.child_objs["id"].name, traverse(ast.child_objs["index"]));
   };
@@ -204,6 +211,7 @@
       return symbol_table.lookup(ast.name);
     
   };
+  
   traverse = function(ast) {
     ast.return_val = [];
     if (ast.construct) {
@@ -217,6 +225,7 @@
         case "divide"           : return traverse_divide(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
+        case "list_elem"        : return traverse_list_elem(ast);
         case "list_item"        : return traverse_list_item(ast);
         case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
@@ -237,7 +246,6 @@
         case "string_expr"      : return traverse_string_expr(ast);
         case "string_var"       : return traverse_string_var(ast);
         default: console.error("AST Traversal error: ");
-                 console.error(ast);
       }
     }
   }
@@ -411,11 +419,18 @@ float  "real"  = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 integer "integer" 
                = d:DIGIT+             WS  { return text().trim(); }
 
-var            = list_item
+var            = list_elem
+
+list_elem      = i:ID spec:(list_rest) { return { construct: "list_elem", name: i.name, child_objs: {"id": i, "spec": spec}, children: [spec]};}
+               / single
+
+list_rest      = list_index* { return text(); }
+
+list_index     = OPEN_BRACKET index:expr CLOSE_BRACKET
+
 
 list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
-                / single
-
+                
 single          = i:ID {return {construct: "variable", name: i.name};}
                 / string_expr
 
