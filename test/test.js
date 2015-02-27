@@ -101,7 +101,7 @@ describe("PRINT STATEMENTS", function() {
       expect(result).to.equal("hello world");
     });
   });
-});
+}); // PRINT STATEMENTS
 
 describe("COMMENTS", function() {
   it("should effectively ignore a single comment", function() {
@@ -116,7 +116,7 @@ describe("COMMENTS", function() {
     var result=check('print "cool"\n# prog is over, bud.');
     expect(result).to.equal('cool');
   });
-});
+}); // COMMENTS
 
 describe("SYMBOL TABLE", function() {
   describe("Initialized variables", function() {
@@ -134,15 +134,7 @@ describe("SYMBOL TABLE", function() {
       var result = check('text t = 3.14\
         print t');
       expect(result).to.equal('3.14');
-    });
-    it("should initialize lists with list literal", function() {
-      var result = check('list l = [1,2,3] print l');
-      expect(result).to.equal('1,2,3');
-    });
-    it("should initialize lists with list variable", function() {
-      var result = check('list l = [1,2,3]\nlist m = l\nprint m');
-      expect(result).to.equal('1,2,3');
-    });
+    });    
   }); // Initialized variables
 
   describe("Assignments", function() {
@@ -155,48 +147,74 @@ describe("SYMBOL TABLE", function() {
         var result = check('int i\nlet i = 2 + 2')
         expect(symbol_table['i']).to.eql({type: 'int', val: 4});
       });
-      it("list item assignments to int vars", function() {
-        var result = check('list l = [1,2,3]\nint i = l[2]');
+    }); // Assignn to int vars
+    describe("Cast assignments (as would occur in prompt input)", function() {
+      it("should properly cast input for int vars", function() {
+        var result = check('int i\nlet i = "3.14"');
         expect(symbol_table['i']).to.eql({type: 'int', val: 3});
       });
-    }); // Assignn to int vars
+      it("should properly cast input for real vars", function() {
+        var result = check('real r\nlet r = "3.14"');
+        expect(symbol_table['r']).to.eql({type: 'real', val: 3.14});
+      });
+      it("should properly cast input for text vars", function() {
+        var result = check('text t\nlet t = 3.14');
+        expect(symbol_table['t']).to.eql({type: 'text', val: "3.14"});
+      });
+    }); // Cast assignments
+  });// Assignents
 
-  describe("Cast assignments (as would occur in prompt input)", function() {
-    it("should properly cast input for int vars", function() {
-      var result = check('int i\nlet i = "3.14"');
+  describe("LISTS", function() {
+    it("list item assignments to int vars", function() {
+      var result = check('list l = [1,2,3]\nint i = l[2]');
       expect(symbol_table['i']).to.eql({type: 'int', val: 3});
     });
-    it("should properly cast input for real vars", function() {
-      var result = check('real r\nlet r = "3.14"');
-      expect(symbol_table['r']).to.eql({type: 'real', val: 3.14});
+    it("should assign to lists with list literal", function() {
+      var result = check('list l\nlet l = [1,2,3]\nprint l');
+      expect(result).to.equal('1,2,3');
     });
-    it("should properly cast input for text vars", function() {
-      var result = check('text t\nlet t = 3.14');
-      expect(symbol_table['t']).to.eql({type: 'text', val: "3.14"});
+    it("should assign to lists with list variable", function() {
+      var result = check('list l = [1,2,3]\nlist m\nlet m = l\nprint m');
+      expect(result).to.equal('1,2,3');
     });
-  }); // Assign via user-input (prompt)
+    it("should assign to existing list items", function() {
+      var result = check('list l = [1,2,3]\nlet l[0] = 2');
+      expect(symbol_table['l']).to.eql({type: 'list', val: [2,2,3]});
+    });
+    it("should assign to new list items", function() {
+      var result = check('list l = [1,2,3]\nlet l[5] = 2');
+      expect(symbol_table['l']).to.eql({type: 'list', val: [1,2,3,,,2]});
+    });
+    it("should initialize lists with list literal", function() {
+      var result = check('list l = [1,2,3] print l');
+      expect(result).to.equal('1,2,3');
+    });
+    it("should initialize lists with list variable", function() {
+      var result = check('list l = [1,2,3]\nlist m = l\nprint m');
+      expect(result).to.equal('1,2,3');
+    }); 
+    it("should parse 2D list literals", function() {
+      var result = check('list l = [[1,2],[2,4],[3,6]]');
+      expect(symbol_table['l']).to.eql({type: 'list', val: [[1,2],[2,4],[3,6]]});
+    }); 
+    it("should parse 2D list elements", function() {
+      var result = check('list l = [[1,2],[2,4],[3,6]]\nprint l[0][0]');
+      expect(result).to.equal('1');
+    });
+  }); // LISTS
+}); // SYMBOL_TABLE
 
+describe("EXPRESSIONS", function() {
+  it("should handle simple integer division", function() {
+    var result = check('int i = 10 / 3\nprint i');
+      expect(result).to.equal('3');
+  });
+  it("should handle simple floating point division", function() {
+    var result = check('real r = 10 / 3\nprint r');
+    expect(symbol_table["r"].val).to.be.within(3,4);
+  });
+});
 
-    describe("Assign to list vars", function() {
-      it("should assign to lists with list literal", function() {
-        var result = check('list l\nlet l = [1,2,3]\nprint l');
-        expect(result).to.equal('1,2,3');
-      });
-      it("should assign to lists with list variable", function() {
-        var result = check('list l = [1,2,3]\nlist m\nlet m = l\nprint m');
-        expect(result).to.equal('1,2,3');
-      });
-      it("should assign to existing list items", function() {
-        var result = check('list l = [1,2,3]\nlet l[0] = 2');
-        expect(symbol_table['l']).to.eql({type: 'list', val: [2,2,3]});
-      });
-      it("should assign to new list items", function() {
-        var result = check('list l = [1,2,3]\nlet l[5] = 2');
-        expect(symbol_table['l']).to.eql({type: 'list', val: [1,2,3,,,2]});
-      });
-    }); // Assign to list vars
-  }); // Assignments
-}); // SYMBOL TABLE  
   //   var result = traverse(parse('int i = 3 print i*2'));
   //   expect(result).to.equal('6');
 
