@@ -112,7 +112,6 @@
     var spec_list = ast.child_objs["spec"];
     var elem_string = "val_list" + spec_list;
     return eval(elem_string);
-
   };
   var traverse_list_item = function(ast) {
     return symbol_table.li_lookup(ast.child_objs["id"].name, traverse(ast.child_objs["index"]));
@@ -307,7 +306,7 @@ assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt "assignment"
                  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
-                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
+                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * CONDITIONAL EXECUTION CONSTRUCTS*

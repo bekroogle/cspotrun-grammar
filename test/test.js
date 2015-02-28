@@ -213,14 +213,24 @@ describe("EXPRESSIONS", function() {
     var result = check('real r = 10 / 3\nprint r');
     expect(symbol_table["r"].val).to.be.within(3,4);
   });
+}); // EXPRESSIONS
+
+describe("SEQUENCES", function() {
+  it("should execute simple assignments and print statements in sequential, imperative manner", function() {
+    var result = check('int i = 3\nprint i\nlet i = 2');
+    expect(result).to.equal('3');
+  });
+  it("should execute list assignments and print statements in sequential, imperative manner", function() {
+    var result = check('list l =[1,2,3]\nprint l + endl\nlet l = [2,4,6]');
+    expect(result).to.equal('1,2,3\n');
+  });
+  it("should execute list-elem assignments and print statements in sequential, imperative manner", function() {
+    var result = check('list l = [1,2,3]\nlet l = [2,4,6]\nprint l\nlet l[0] = 7');
+    expect(result).to.equal('2,4,6');
+  });
+  it("should exec list-elem assigns and list-elem print stmts in seq., imperative manner", function() {
+    var result = check('list l = [1,2]\nprint l[0]\nlet l[0] = 2');
+    expect(result).to.equal('1');
+  });
 });
 
-  //   var result = traverse(parse('int i = 3 print i*2'));
-  //   expect(result).to.equal('6');
-
-  //  var result = traverse(parse('int i = "3.14" real r = "3.14" text t = "3.14" list l = [3,.1,"4"] print t print r print i print l'));
-  //   expect(result).to.equal("3.14\
-  //     3.14\
-  //     3\
-  //     3,0.1,4")
-  // });
