@@ -197,7 +197,7 @@
       case '<'     : return l < r;  
       case '>='    : return l >= r; 
       case '>'     : return l > r; 
-      case '='     : return l = r;
+      case '='     : return l === r;
       default      : throw("Non-implemented relational operator."); 
     }
   };
