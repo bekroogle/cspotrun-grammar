@@ -103,6 +103,49 @@ describe("PRINT STATEMENTS", function() {
   });
 }); // PRINT STATEMENTS
 
+describe("CONDITIONALS", function() {
+  describe("If-then guards", function() {
+    describe("Boolean literals", function() {
+      it("should execute then-part with true boolean literal", function() {
+        var result = check('if true:\nprint "good"\n end if');
+        expect(result).to.equal('good');
+      });
+      it("should not execute then-part with false boolean literal", function() {
+        var result = check('if false:\nprint "bad"\n end if\n print "good"');
+        expect(result).to.equal('good');
+      });
+    });
+    describe("Relational expressions", function() {
+      it("A guard of '1 < 2' should cause the body to execute", function() {
+        var result = check('if 1 < 2:\nprint "good"\n end if');
+        expect(result).to.equal('good');
+      });
+      it("A guard of '1 > 2' should NOT cause the body to execute", function() {
+        var result = check('if 1 > 2:\nprint "bad"\n end if\n print "good"');
+        expect(result).to.equal('good');
+      });
+      it("A guard of '1 <= 2' should cause the body to execute", function() {
+        var result = check('if 1 <= 2:\nprint "good"\n end if');
+        expect(result).to.equal('good');
+      });
+      it("A guard of '1 >= 2' should NOT cause the body to execute", function() {
+        var result = check('if 1 >= 2:\nprint "bad"\n end if\n print "good"');
+        expect(result).to.equal('good');
+      });
+    }); // Relational expressions
+    describe("Equality tests", function() {
+      it("A guard of '1 = 1' should cause the body to execute", function() {
+        var result = check('if 1 = 1:\nprint "good"\n end if');
+        expect(result).to.equal('good');
+      });
+      it("A guard of '1 = 2' should NOT cause the body to execute", function() {
+        var result = check('if 1 = 2:\nprint "bad"\n end if\n print "good"');
+        expect(result).to.equal('good');
+      });
+    });
+  });
+});
+
 describe("COMMENTS", function() {
   it("should effectively ignore a single comment", function() {
     var result = check('# nobody here but us comments');
