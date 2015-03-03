@@ -198,6 +198,8 @@
       case '>='    : return l >= r; 
       case '>'     : return l > r; 
       case '='     : return l === r;
+      case '<>'    : // falls through
+      case '!='    : return l != r;
       default      : throw("Non-implemented relational operator."); 
     }
   };
@@ -450,7 +452,7 @@ bool_lit       = TRUE
 
 relational_expr= l:expr op:rel_op r:expr {return {construct: "relational_expr", name: op, child_objs: {operator: op, "l": l, "r": r}, children: [l, r]};}
 
-rel_op         = EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
+rel_op         = NOT_EQUAL / EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LESS
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * LEXICAL PART                                            *
@@ -492,6 +494,7 @@ GREATER_EQUAL  = '>='          WS  { return text().trim(); }
 GREATER        = '>'           WS  { return text().trim(); }
 LESS_EQUAL     = '<='          WS  { return text().trim(); }
 LESS           = '<'           WS  { return text().trim(); }
+NOT_EQUAL      = ('<>' / '!=') WS  { return text().trim(); }
 
 // Keywords
 DO             = 'do'          WS  { return text().trim(); }

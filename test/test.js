@@ -142,6 +142,15 @@ describe("CONDITIONALS", function() {
         var result = check('if 1 = 2:\nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
+
+      it("A guard of '1 != 2' should cause the body to execute", function() {
+        var result = check('if 1 != 2:\nprint "good"\n end if');
+        expect(result).to.equal('good');
+      });
+      it("A guard of '2 != 2' should NOT cause the body to execute", function() {
+        var result = check('if 2 != 2:\nprint "bad"\n end if\n print "good"');
+        expect(result).to.equal('good');
+      });
     });
   });
 });
