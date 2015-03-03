@@ -271,6 +271,9 @@ describe("EXPRESSIONS", function() {
   });
 }); // EXPRESSIONS
 
+
+/* Later:
+
 describe("SEQUENCES", function() {
   it("should execute simple assignments and print statements in sequential, imperative manner", function() {
     var result = check('int i = 3\nprint i\nlet i = 2');
@@ -290,3 +293,4 @@ describe("SEQUENCES", function() {
   });
 });
 
+*/
