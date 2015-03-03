@@ -132,6 +132,9 @@
     }
     return list;
   };
+  var traverse_mod = function(ast) {
+    return traverse(ast.child_objs["num"]) % traverse(ast.child_objs["denom"]);
+  };
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
   };
@@ -229,21 +232,22 @@
         case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
+        case "mod"              : return traverse_mod(ast);
+        case "multiply"         : return traverse_mult(ast);
         case "negative"         : return traverse_negative(ast);
+        case "null"             : return null;
+        case "number"           : return traverse_number(ast);
+        case "print_stmt"       : return traverse_print_stmt(ast);
         case "proc_call"        : return traverse_proc_call(ast);
         case "proc_def"         : return traverse_proc_def(ast);
         case "program"          : return traverse_program(ast);
-        case "multiply"         : return traverse_mult(ast);
-        case "null"             : return null;
-        case "variable"         : return traverse_num_var(ast);
-        case "number"           : return traverse_number(ast);
-        case "print_stmt"       : return traverse_print_stmt(ast);
         case "prompt_stmt"      : return traverse_prompt_stmt(ast);
         case "recip"            : return traverse_recip(ast);
         case "relational_expr"  : return traverse_relational_expr(ast);
         case "string_cat"       : return traverse_string_cat(ast);
         case "string_expr"      : return traverse_string_expr(ast);
         case "string_var"       : return traverse_string_var(ast);
+        case "variable"         : return traverse_num_var(ast);
         default: console.error("AST Traversal error: ");
       }
     }
@@ -381,7 +385,7 @@ dbl_quo_str_part
                = n:(! DBL_QUOTE .)* { return text(); }
 
 quo_str_part   = n:(! QUOTE .)* { return text(); }
-
+ 
 prime_expr           = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
@@ -393,9 +397,13 @@ subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_o
                // Little hack here to display negatives, instead of more complicated tree.  
 neg            = MINUS n:mult { return {construct: "negative", name: n.name * -1} ;}
                / mult
- 
-mult           = l:div TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
+
+mult           = l:mod TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
+               / mod
+
+mod            =num:div MOD denom:div { return {construct: "mod", name: "mod", child_objs: {"num": num, "denom": denom}, children: [num, denom]};}
                / div
+
  
 div            = num:recip denom:div { return {construct: "divide", name: '*', child_objs: {numerator: num, denominator: denom}, children: [num, denom]}; }
                / recip
@@ -473,6 +481,7 @@ ASSIGN_OP      = operator:'='  WS  { return operator; }
 CLOSE_PAREN    = operator:')'  WS  { return operator; }
 DIVIDE         = operator:'/'  WS  { return operator; }
 MINUS          = operator:'-'  WS  { return operator; }
+MOD            = operator:'%'  WS  { return operator; }
 OPEN_PAREN     = operator:'('  WS  { return operator; }
 PLUS           = operator:'+'  WS  { return operator; }
 TIMES          = operator:'*'  WS  { return operator; }

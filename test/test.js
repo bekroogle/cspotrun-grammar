@@ -213,6 +213,10 @@ describe("EXPRESSIONS", function() {
     var result = check('real r = 10 / 3\nprint r');
     expect(symbol_table["r"].val).to.be.within(3,4);
   });
+  it("should handle <int> % <int> expressions", function() {
+    var result = check('int i = 5 % 2\nprint i');
+    expect(result).to.equal('1');
+  });
 }); // EXPRESSIONS
 
 describe("SEQUENCES", function() {
