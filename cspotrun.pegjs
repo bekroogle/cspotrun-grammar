@@ -88,6 +88,13 @@
     // will have been converted into the reciprocal of the denominator:
     return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
   };
+  var traverse_if_else = function(ast) {
+    if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
+      return traverse(ast.child_objs["then_part"]);
+    } else {
+      return traverse(ast.child_objs["else_part"]);
+    }
+  };
   var traverse_if_then = function(ast) {
     if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
       return traverse(ast.child_objs["then_part"]);
@@ -227,6 +234,7 @@
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
+        case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
         case "list_elem"        : return traverse_list_elem(ast);
@@ -320,11 +328,17 @@ assign_stmt "assignment"
 
 // If-then construct
 ifthen_stmt "if then"
-               = ip:if_part tp:then_part end_if { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
+               = if_else_stmt
+               / if_stmt
 
-if_part        = IF cond:bool_expr COLON WSNL{ return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
+if_else_stmt   = ip:if_part tp:then_part ep:else_part end_if { return { construct: "if_else", name: "if_else", child_objs: {if_part: ip, then_part: tp, else_part: ep}, children: [ip, tp, ep]};}
+if_stmt        = ip:if_part tp:then_part end_if              { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
 
-then_part      = stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
+if_part        = IF cond:bool_expr WS { return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
+
+then_part      = THEN WSNL stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
+
+else_part      = ELSE WSNL stmts:statement* { return {construct: "program", name: "else part", children: stmts};}
 
 end_if         = END IF 
 
@@ -403,7 +417,7 @@ neg            = MINUS n:mult { return {construct: "negative", name: n.name * -1
 mult           = l:mod TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
                / mod
 
-mod            =num:div MOD denom:div { return {construct: "mod", name: "mod", child_objs: {"num": num, "denom": denom}, children: [num, denom]};}
+mod            = num:div MOD denom:div { return {construct: "mod", name: "mod", child_objs: {"num": num, "denom": denom}, children: [num, denom]};}
                / div
 
  
@@ -498,6 +512,7 @@ NOT_EQUAL      = ('<>' / '!=') WS  { return text().trim(); }
 
 // Keywords
 DO             = 'do'          WS  { return text().trim(); }
+ELSE           = 'else'        WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
 ENDL           = 'endl'        WS  { return text().trim(); }
 FALSE          = 'false'       WS  { return text().trim(); }
