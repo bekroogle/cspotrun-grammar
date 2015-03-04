@@ -269,7 +269,7 @@
 
 program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
-statement      = stmt:( label_stmt
+statement "statement" = stmt:( label_stmt
                       / proc_def            /* proc myproc: <stmts> end proc */
                       / proc_call           /* do myproc */
                       / goto_stmt
@@ -336,7 +336,7 @@ if_stmt        = ip:if_part tp:then_part end_if              { return { construc
 
 if_part        = IF cond:bool_expr WS { return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
 
-then_part      = THEN WSNL stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
+then_part      = THEN? WSNL stmts:statement* { return {construct: "program", name: "then part", children: stmts};}
 
 else_part      = ELSE WSNL stmts:statement* { return {construct: "program", name: "else part", children: stmts};}
 

@@ -107,55 +107,70 @@ describe("CONDITIONALS", function() {
   describe("If-then guards", function() {
     describe("Boolean literals", function() {
       it("should execute then-part with true boolean literal", function() {
-        var result = check('if true then \nprint "good"\n end if');
+        var result = check('if true   \nprint "good"\n end if');
         expect(result).to.equal('good');
       });
       it("should not execute then-part with false boolean literal", function() {
-        var result = check('if false then \nprint "bad"\n end if\n print "good"');
+        var result = check('if false   \nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
     });
     describe("Relational expressions", function() {
       it("A guard of '1 < 2' should cause the body to execute", function() {
-        var result = check('if 1 < 2 then \nprint "good"\n end if');
+        var result = check('if 1 < 2   \nprint "good"\n end if');
         expect(result).to.equal('good');
       });
       it("A guard of '1 > 2' should NOT cause the body to execute", function() {
-        var result = check('if 1 > 2 then \nprint "bad"\n end if\n print "good"');
+        var result = check('if 1 > 2   \nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
       it("A guard of '1 <= 2' should cause the body to execute", function() {
-        var result = check('if 1 <= 2 then \nprint "good"\n end if');
+        var result = check('if 1 <= 2   \nprint "good"\n end if');
         expect(result).to.equal('good');
       });
       it("A guard of '1 >= 2' should NOT cause the body to execute", function() {
-        var result = check('if 1 >= 2 then \nprint "bad"\n end if\n print "good"');
+        var result = check('if 1 >= 2   \nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
     }); // Relational expressions
     describe("Equality tests", function() {
       it("A guard of '1 = 1' should cause the body to execute", function() {
-        var result = check('if 1 = 1 then \nprint "good"\n end if');
+        var result = check('if 1 = 1   \nprint "good"\n end if');
         expect(result).to.equal('good');
       });
       it("A guard of '1 = 2' should NOT cause the body to execute", function() {
-        var result = check('if 1 = 2 then \nprint "bad"\n end if\n print "good"');
+        var result = check('if 1 = 2   \nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
 
       it("A guard of '1 != 2' should cause the body to execute", function() {
-        var result = check('if 1 != 2 then \nprint "good"\n end if');
+        var result = check('if 1 != 2   \nprint "good"\n end if');
         expect(result).to.equal('good');
       });
       it("A guard of '2 != 2' should NOT cause the body to execute", function() {
-        var result = check('if 2 != 2 then \nprint "bad"\n end if\n print "good"');
+        var result = check('if 2 != 2   \nprint "bad"\n end if\n print "good"');
         expect(result).to.equal('good');
       });
     }); // If-then gaurds
     describe("If-else", function () {
-      it("should do the if-part for true gaurd expressions", function() {
-        var result = check('if 1 = 1 then\nprint "true"\nelse\n print "false"\n end if');
+      // describe("else if", function() {
+      //   it("should allow chaining of exclusive conditions through else if", function () {
+      //     var result = check('int i = 3\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
+      //     expect(result).to.equal('yay!');
+      //     var result = check('int i = 2\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
+      //     expect(result).to.equal('oops again');
+      //     var result = check('int i = 1\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
+      //     expect(result).to.equal('oops');
+      //   });
+      // });
+
+      it("should only do the if-part for true gaurd expressions", function() {
+        var result = check('if 1 = 1  \nprint "true"\nelse\n print "false"\n end if');
         expect(result).to.equal('true');
+      });
+      it("should only do the else-part for false gaurd expressions", function() {
+        var result = check('if 1 = 2  \nprint "true"\nelse\n print "false"\n end if');
+        expect(result).to.equal('false');
       });
     });
 
