@@ -447,7 +447,7 @@ var            = list_elem
 list_elem      = i:ID spec:(list_rest) { return { construct: "list_elem", name: i.name, child_objs: {"id": i, "spec": spec}, children: [spec]};}
                / single
 
-list_rest      = list_index* { return text(); }
+list_rest      = list_index+ { return text(); }
 
 list_index     = OPEN_BRACKET index:expr CLOSE_BRACKET
 
