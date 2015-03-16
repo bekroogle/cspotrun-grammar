@@ -346,7 +346,7 @@ end_if         = END IF
 loop_stmt "loop"
                = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON WSNL{ return cond;}
+loop_header    = WHILE cond:bool_expr COLON? WSNL{ return cond;}
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
