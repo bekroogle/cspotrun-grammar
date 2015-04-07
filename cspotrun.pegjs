@@ -71,7 +71,14 @@
       traverse(ast.child_objs["right"]);
   };
   var traverse_assign = function(ast) {
-    
+    if (!symbol_table[ast.child_objs["id"]]) {
+      throw ({
+        name: "SyntaxWarning",
+        line: ast.line,
+        column: ast.column,
+        message: "Undeclared variable."
+      });
+    }
 
     switch (symbol_table[ast.child_objs["id"]].type) {
       case "int"   : symbol_table[ast.child_objs["id"]].val = parseInt(traverse(ast.children[1]));   break;
@@ -327,8 +334,8 @@ declare          = t:typename WS i:ID { return { construct: "declare", name: "de
 assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt "assignment"
-                 = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
-                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
+                 = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
+                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", "line": line(), "column": column(), child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * CONDITIONAL EXECUTION CONSTRUCTS*
