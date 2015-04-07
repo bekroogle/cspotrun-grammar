@@ -170,7 +170,7 @@
     return traverse(ast.child_objs["expression"]);
   };
   var traverse_prompt_stmt = function(ast) {
-    return prompt(ast.name);
+    return prompt(traverse(ast.child_objs["expression"]));
   };
   var traverse_proc_call = function(ast) {
     return traverse(symbol_table.lookup(ast.child_objs["id"]));
@@ -359,7 +359,7 @@ print_stmt "print statement"
                = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
 
 prompt_stmt "prompt"
-               = PROMPT s:string_expr { return {construct: "prompt_stmt", name: s.name};}
+               = PROMPT s:prime_expr { return {construct: "prompt_stmt", name: s.name, child_objs: {expression: s}, children: [s]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * EXPRESSIONS                     *
@@ -402,7 +402,7 @@ dbl_quo_str_part
 
 quo_str_part   = n:(! QUOTE .)* { return text(); }
  
-prime_expr           = add
+prime_expr     = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
                / subtract
@@ -455,7 +455,7 @@ list_index     = OPEN_BRACKET index:expr CLOSE_BRACKET
 list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
                 
 single          = i:ID {return {construct: "variable", name: i.name};}
-                / string_expr
+                / string_cat
 
 // Boolean expressions:
 bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
