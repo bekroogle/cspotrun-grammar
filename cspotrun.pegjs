@@ -40,7 +40,15 @@
       switch (this[ast.child_objs["id"]].type) {
         case "int"  : this[ast.child_objs["id"]].val = parseInt(traverse(ast.child_objs["value"])); break;
         case "real" : this[ast.child_objs["id"]].val = parseFloat(traverse(ast.child_objs["value"])); break;
-        case "text" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]) === null ? null : traverse(ast.child_objs["value"]).toString(); break;
+        case "text" : {
+          var value = traverse(ast.child_objs.value);
+          if (value === null) {
+            this[ast.child_objs["id"]].val = null;    
+          } else {
+            this[ast.child_objs["id"]].val = value.toString();
+          }
+          break;
+        }
         case "list" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]); break;
       }
     },
