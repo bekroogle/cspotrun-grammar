@@ -1,3 +1,4 @@
+//test
 { 
   pegedit_opts = {treenav:"collapse"};
   return_val = [];
@@ -71,20 +72,23 @@
       traverse(ast.child_objs["right"]);
   };
   var traverse_assign = function(ast) {
-    if (!symbol_table[ast.child_objs["id"]]) {
+    var id = ast.child_objs.id.name
+    if (!symbol_table[id]) {
       throw ({
         name: "SyntaxWarning",
         line: ast.line,
         column: ast.column,
-        message: "Undeclared variable."
+        message: "Undeclared variable: " + id + "."
       });
     }
+    console.log("assign ast: ");
+    console.log(ast);
 
-    switch (symbol_table[ast.child_objs["id"]].type) {
-      case "int"   : symbol_table[ast.child_objs["id"]].val = parseInt(traverse(ast.children[1]));   break;
-      case "real"  : symbol_table[ast.child_objs["id"]].val = parseFloat(traverse(ast.children[1])); break;
-      case "text"  : symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]).toString();  break;
-      default      : symbol_table[ast.child_objs["id"]].val = traverse(ast.children[1]);             break;
+    switch (symbol_table[id].type) {
+      case "int"   : symbol_table[id].val = parseInt(traverse(ast.children[1]));   break;
+      case "real"  : symbol_table[id].val = parseFloat(traverse(ast.children[1])); break;
+      case "text"  : symbol_table[id].val = traverse(ast.children[1]).toString();  break;
+      default      : symbol_table[id].val = traverse(ast.children[1]);             break;
     }
   };
   var traverse_bool_lit = function(ast) {
@@ -162,18 +166,19 @@
   };
   var traverse_negative = function(ast) {
     
+    return -1 * traverse(ast.child_objs.number);
     // First we convert to string to check for a decimal
     // to infer type (float/int) and coerce back to the
     // appropriate type.
-    var neg_name = ast.name.toString();
-    if (neg_name.match(/\./)) {
-      neg_name = parseFloat(ast.name);
-    } else {
-      neg_name = parseInt(ast.name);
-    }
+    // var neg_name = ast.name.toString();
+    // if (neg_name.match(/\./)) {
+    //   neg_name = parseFloat(ast.name);
+    // } else {
+    //   neg_name = parseInt(ast.name);
+    // }
 
-    // Then we return the coerced result.
-    return traverse({construct: "number", name: neg_name});
+    // // Then we return the coerced result.
+    // return traverse({construct: "number", name: neg_name});
   };
   var traverse_number = function(ast) {
     return ast.name
@@ -334,7 +339,7 @@ declare          = t:typename WS i:ID { return { construct: "declare", name: "de
 assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt "assignment"
-                 = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i.name, value: e.name}, children: [i, e]}; }
+                 = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i, value: e}, children: [i, e]}; }
                  / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", "line": line(), "column": column(), child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
@@ -426,7 +431,7 @@ subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_o
                / neg
                
                // Little hack here to display negatives, instead of more complicated tree.  
-neg            = MINUS n:mult { return {construct: "negative", name: n.name * -1} ;}
+neg            = MINUS n:mult { return {construct: "multiply", name: "*", child_objs: {left: {construct: "number", name: -1}, right: n}, children: [{construct: "number", name: -1}, n]} ;}
                / mult
 
 mult           = l:mod TIMES r:mult { return {construct: "multiply", name: "*", child_objs: {left: l, right: r}, children: [l, r]}; }
