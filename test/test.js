@@ -291,6 +291,10 @@ describe("EXPRESSIONS", function() {
     var result = check('int i = 5 % 2\nprint i');
     expect(result).to.equal('1');
   });
+  it("should handle <number> - <variable>", function() {
+    var result = check('int i = 5\n int j = 100 - i\n print j');
+    expect(result).to.equal('95');
+  });
 }); // EXPRESSIONS
 
 
