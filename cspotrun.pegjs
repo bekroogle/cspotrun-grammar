@@ -53,6 +53,9 @@
         case "list" : this[ast.child_objs["id"]].val = traverse(ast.child_objs["value"]); break;
       }
     },
+    increment: function(key, delta) {
+      this[key].val = this[key].val + delta;
+    },
     lookup: function(key) {
       return this[key].val;
     },
@@ -94,6 +97,36 @@
   var traverse_bool_lit = function(ast) {
     if (ast.name === "true") return true;
     else return false;
+  };
+  var traverse_count_init = function(ast) {
+    // Set id to initial value:
+    try {
+      traverse({construct: "assign", name: "assign", child_objs: {"id": ast.child_objs.id, value: ast.child_objs.begin}, children: [ast.child_objs.id, ast.child_objs.begin]});  
+    } catch (e) {
+      traverse({ construct: "initialize", name: "initialize", child_objs: {typename: "int", id: ast.child_objs.id.name, value: ast.child_objs.begin}});
+    }
+    
+    return {id: ast.child_objs.id.name, begin: traverse(ast.child_objs.begin), end: traverse(ast.child_objs.end), current: traverse(ast.child_objs.begin)};
+  };
+  var traverse_count_loop = function(ast) {
+    // Initialize the counter variable:
+    var init_obj = traverse(ast.child_objs.init);
+
+    // While <id> < <end>
+    while (init_obj.current <= init_obj.end) {
+      
+      // Do body portion
+      ast.return_val.push(traverse(ast.child_objs["body"]));
+      console.log("init obj: ");
+      console.log(init_obj);
+      // Increment <id>
+      init_obj.current++;
+      symbol_table.increment(init_obj.id, 1);
+     
+    }
+
+    return ast.return_val.join('');
+
   };
   var traverse_csv = function(ast) {
 
@@ -163,22 +196,6 @@
   };
   var traverse_mult = function(ast) {
     return traverse(ast.child_objs["left"]) * traverse(ast.child_objs["right"]);
-  };
-  var traverse_negative = function(ast) {
-    
-    return -1 * traverse(ast.child_objs.number);
-    // First we convert to string to check for a decimal
-    // to infer type (float/int) and coerce back to the
-    // appropriate type.
-    // var neg_name = ast.name.toString();
-    // if (neg_name.match(/\./)) {
-    //   neg_name = parseFloat(ast.name);
-    // } else {
-    //   neg_name = parseInt(ast.name);
-    // }
-
-    // // Then we return the coerced result.
-    // return traverse({construct: "number", name: neg_name});
   };
   var traverse_number = function(ast) {
     return ast.name
@@ -251,6 +268,8 @@
         case "assign"           : return traverse_assign(ast);
         case "bool_lit"         : return traverse_bool_lit(ast);
         case "comment"          : return null;
+        case "count_init"       : return traverse_count_init(ast);
+        case "count_loop"       : return traverse_count_loop(ast);
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
@@ -264,7 +283,6 @@
         case "loop_stmt"        : return traverse_loop_stmt(ast);
         case "mod"              : return traverse_mod(ast);
         case "multiply"         : return traverse_mult(ast);
-        case "negative"         : return traverse_negative(ast);
         case "null"             : return null;
         case "number"           : return traverse_number(ast);
         case "print_stmt"       : return traverse_print_stmt(ast);
@@ -296,7 +314,9 @@ statement "statement" = stmt:( label_stmt
                       / declare_stmt        /* int i [or] int i = 3 */
                       / assign_stmt         /* let i = i + 1 */
                       / ifthen_stmt         /* if i < 2: <stmts> end if */
+                      / count_loop
                       / loop_stmt           /* while i < 2: <stmts> repeat */
+                      
                       / print_stmt) WSNL { return stmt; } /* print 2+2 */
 
 
@@ -366,11 +386,17 @@ end_if         = END IF
 loop_stmt "loop"
                = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
-loop_header    = WHILE cond:bool_expr COLON? WSNL{ return cond;}
+loop_header    = WHILE cond:bool_expr (! TO) COLON? WSNL{ return cond;}
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
 
 end_loop       = REPEAT
+
+// For loop
+
+count_loop       = lh:count_loop_header lb:loop_body el:end_loop { return {construct: "count_loop", name: "count loop", child_objs: {init: lh, body: lb}, children: [lh, lb]};}
+count_loop_header
+               = WHILE id:ID ASSIGN_OP begin:expr TO end:expr COLON? WSNL { return {construct: "count_init", name: "count init", child_objs: {"id":id, "begin":begin, "end":end}, children: [id, begin, end], line: line(), column: column()};}
 
 /* * * * * * * * * * * * * * * * * * 
  * I/O CONSTRUCTS                  *
@@ -492,13 +518,14 @@ rel_op         = NOT_EQUAL / EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LES
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / THEN / TRUE /  WHILE / typename
+keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
 
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
 
 // Identifier for variables, labels, etc. FolloWS C++ rules.
-ID "identifier" = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
+
+ID = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
 DIGIT          = [0-9]
 
@@ -543,6 +570,7 @@ PRINT          = 'print'       WS  { return text().trim(); }
 PROC           = 'proc'        WS  { return text().trim(); }
 PROMPT         = 'prompt'      WS  { return text().trim(); }
 REPEAT         = 'repeat'      WS  { return text().trim(); }
+TO             = 'to'          WS  { return text().trim(); }
 THEN           = 'then'        WS  { return text().trim(); }
 TRUE           = 'true'        WS  { return text().trim(); }
 WHILE          = 'while'       WS  { return text().trim(); }
