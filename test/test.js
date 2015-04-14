@@ -319,6 +319,18 @@ describe("EXPRESSIONS", function() {
   });
 }); // EXPRESSIONS
 
+describe("STRINGS", function() {
+  describe("Methods", function() {
+    it("should return the length", function() {
+      var result = check('text t = "spot"\nprint t.length');
+      expect(result).to.equal('4');
+    });
+    it("should convert the string to uppercase", function() {
+      var result = check('text t = "spot"\nprint t.uppercase');
+      expect(result).to.equal("SPOT");
+    });
+  }); // Methods 
+});
 
 /* Later:
 

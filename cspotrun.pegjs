@@ -209,6 +209,33 @@
     }
     return list;
   };
+  var traverse_method = function(ast) {
+    // The name of the receiving object:
+    var id = ast.child_objs.variable.name;
+    
+    // The method being called on that object:
+    var method = ast.child_objs.method.name;
+    
+    // Figure out which type the variable is:
+    switch (symbol_table.type_of(id)) {
+      case "int": break;
+      case "real": break;
+      case "text":
+        switch (method) {
+          case "length": return symbol_table.lookup(id).length;
+          case "uppercase": return symbol_table.lookup(id).toUpperCase();
+          default: 
+            throw ({
+              name: "SyntaxError",
+              line: ast.line,
+              column: ast.column,
+              message: "Nonexistent method called on text "+ id +": "+ method +"."
+            });
+        }
+        break;
+      case "list": break;
+    };
+  };
   var traverse_mod = function(ast) {
     return traverse(ast.child_objs["num"]) % traverse(ast.child_objs["denom"]);
   };
@@ -299,6 +326,7 @@
         case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
+        case "method"           : return traverse_method(ast);
         case "mod"              : return traverse_mod(ast);
         case "multiply"         : return traverse_mult(ast);
         case "null"             : return null;
@@ -496,7 +524,7 @@ parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                / atom
                
 atom           = n:num_lit { return {construct: "number", name: n}; }
-               / var
+               / method
 
 num_lit        = f:float { return parseFloat(f); }
                / i:integer { return parseInt(i); }
@@ -505,6 +533,9 @@ float  "real"  = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 
 integer "integer" 
                = d:DIGIT+             WS  { return text().trim(); }
+
+method         = v:var SPOT m:ID { return { construct: "method", name: "method", child_objs: {"variable": v, "method": m }, children: [v, m], line: line(), column: column()};}
+               / var
 
 var            = list_elem
 
