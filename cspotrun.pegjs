@@ -84,8 +84,6 @@
         message: "Undeclared variable: " + id + "."
       });
     }
-    console.log("assign ast: ");
-    console.log(ast);
 
     switch (symbol_table[id].type) {
       case "int"   : symbol_table[id].val = parseInt(traverse(ast.children[1]));   break;
@@ -99,35 +97,55 @@
     else return false;
   };
   var traverse_count_init = function(ast) {
-    // Set id to initial value:
+    var delta;
+    
+    // Set id to initial value. Declare it if it doesn't exist:
     try {
       traverse({construct: "assign", name: "assign", child_objs: {"id": ast.child_objs.id, value: ast.child_objs.begin}, children: [ast.child_objs.id, ast.child_objs.begin]});  
     } catch (e) {
       traverse({ construct: "initialize", name: "initialize", child_objs: {typename: "int", id: ast.child_objs.id.name, value: ast.child_objs.begin}});
     }
-    
-    return {id: ast.child_objs.id.name, begin: traverse(ast.child_objs.begin), end: traverse(ast.child_objs.end), current: traverse(ast.child_objs.begin)};
+
+    // If first num < second num, count up,
+    // If first num > second num, count down
+    // If first num == second num, throw error:
+    if (traverse(ast.child_objs.begin) < traverse(ast.child_objs.end)) {
+      delta = 1;      
+    } else if (traverse(ast.child_objs.begin) > traverse(ast.child_objs.end)) {
+      delta = -1;
+    } else  if (traverse(ast.child_objs.begin) === traverse(ast.child_objs.end)) {
+      throw ({
+        name: "SyntaxError",
+        line: ast.line,
+        column: ast.column,
+        message: "Count begin and count end must be different: " + traverse(ast.child_objs.begin) + " = " + traverse(ast.child_objs.end) + "."
+      });
+    }
+
+    return {id: ast.child_objs.id.name, begin: traverse(ast.child_objs.begin), end: traverse(ast.child_objs.end), current: traverse(ast.child_objs.begin), "delta": delta};
   };
   var traverse_count_loop = function(ast) {
     // Initialize the counter variable:
     var init_obj = traverse(ast.child_objs.init);
 
-    // While <id> < <end>
-    while (init_obj.current <= init_obj.end) {
+    // Does the body n-1 times (must do one more after loop terminates):
+    while (init_obj.current !== init_obj.end) {
       
-      // Do body portion
+      // Do body portion to return stack:
       ast.return_val.push(traverse(ast.child_objs["body"]));
-      console.log("init obj: ");
-      console.log(init_obj);
-      // Increment <id>
-      init_obj.current++;
-      symbol_table.increment(init_obj.id, 1);
-     
+      
+      // Increment counter and update symbol table:
+      init_obj.current += init_obj.delta;
+      symbol_table.increment(init_obj.id, init_obj.delta);
     }
 
-    return ast.return_val.join('');
+    // Do body portion one more time:
+    ast.return_val.push(traverse(ast.child_objs["body"]));
 
+    // Return stack:
+    return ast.return_val.join('');
   };
+
   var traverse_csv = function(ast) {
 
   };

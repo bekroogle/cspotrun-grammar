@@ -177,6 +177,28 @@ describe("CONDITIONALS", function() {
   }); 
 });
 
+describe("LOOPS", function() {
+  describe("While loops", function() {
+    it("Should iterate a simlpe loop", function() {
+      var result = check('int i = 0\n while i < 3\n print i \n let i = i + 1\n repeat');
+      expect(result).to.equal('012');
+    })
+  }); // While loops
+  describe("Counting loops", function() {
+    it("Should be able to count from 1 to 10", function() {
+      var result = check('while i = 1 to 10\nprint i\nrepeat');
+      expect(result).to.equal('12345678910');
+    });
+    it("Should be able to count from 10 to 1", function() {
+      var result = check('while i = 10 to 1\nprint i\nrepeat');
+      expect(result).to.equal('10987654321');
+    });
+    it("Should not allow counting from a number to itself", function() {
+      // Probably won't.
+    });
+  }); // Counting loops
+});
+
 describe("COMMENTS", function() {
   it("should effectively ignore a single comment", function() {
     var result = check('# nobody here but us comments');
@@ -281,7 +303,7 @@ describe("SYMBOL TABLE", function() {
 describe("EXPRESSIONS", function() {
   it("should handle simple integer division", function() {
     var result = check('int i = 10 / 3\nprint i');
-      expect(result).to.equal('3');
+    expect(result).to.equal('3');
   });
   it("should handle simple floating point division", function() {
     var result = check('real r = 10 / 3\nprint r');
