@@ -15,7 +15,25 @@
       }
     }
   };
+  var do_text_method = function(ast) {
+    var id = ast.child_objs.variable.name;
+    switch (ast.child_objs.method.name) {
+          case "length"            : return symbol_table.lookup(id).length;
+          case "uppercase"         : return symbol_table.lookup(id).toUpperCase();
+          case "lowercase"         : return symbol_table.lookup(id).toLowerCase();
 
+          // Converts to array, then reverses and converts back:
+          case "reverse"           : return symbol_table.lookup(id).split("").reverse().join("");                                   
+          
+          default: 
+            throw ({
+              name: "SyntaxError",
+              line: ast.line,
+              column: ast.column,
+              message: "Nonexistent method called on text "+ id +": "+ method +"."
+            });
+        }
+  };
   // Removes the child_objs fields (which are somewhat redundant) from a
   // syntax tree.
   remove_child_objs = function(ast) {
@@ -157,6 +175,7 @@
     // will have been converted into the reciprocal of the denominator:
     return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
   };
+  
   var traverse_exp = function(ast) {
     return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
@@ -218,19 +237,7 @@
     switch (symbol_table.type_of(id)) {
       case "int": break;
       case "real": break;
-      case "text":
-        switch (method) {
-          case "length": return symbol_table.lookup(id).length;
-          case "uppercase": return symbol_table.lookup(id).toUpperCase();
-          default: 
-            throw ({
-              name: "SyntaxError",
-              line: ast.line,
-              column: ast.column,
-              message: "Nonexistent method called on text "+ id +": "+ method +"."
-            });
-        }
-        break;
+      case "text": return do_text_method(ast);
       case "list": break;
     };
   };

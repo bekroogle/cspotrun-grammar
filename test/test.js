@@ -344,7 +344,7 @@ describe("STRINGS", function() {
   }); // Methods 
 });
 
-/* Later:
+/*
 
 describe("SEQUENCES", function() {
   it("should execute simple assignments and print statements in sequential, imperative manner", function() {
