@@ -317,6 +317,18 @@ describe("EXPRESSIONS", function() {
     var result = check('int i = 5\n int j = 100 - i\n print j');
     expect(result).to.equal('95');
   });
+  it("should handle simple exponentiation", function() {
+    var result = check('int i = 2 ^ 3');
+    expect(symbol_table.lookup('i')).to.equal(8);
+  });
+  it("should handle variable exponentiation", function() {
+    var result = check('int i = 2 int j = 3 int k = i ^ j');
+    expect(symbol_table.lookup('k')).to.equal(8);
+  });
+  it("should handle parenthesized exponents", function() {
+    var result = check('int i = 2 * (3 + 2) ^ 2');
+    expect(symbol_table.lookup('i')).to.equal(50);
+  })
 }); // EXPRESSIONS
 
 describe("STRINGS", function() {
