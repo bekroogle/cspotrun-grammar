@@ -145,7 +145,6 @@
     // Return stack:
     return ast.return_val.join('');
   };
-
   var traverse_csv = function(ast) {
 
   };
@@ -157,6 +156,9 @@
     // This multiplies the numerator and denominator because the denominator
     // will have been converted into the reciprocal of the denominator:
     return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
+  };
+  var traverse_exp = function(ast) {
+    return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
   var traverse_if_else = function(ast) {
     if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
@@ -314,6 +316,7 @@
         case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
+        case "exp"              : return traverse_exp(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
@@ -349,8 +352,8 @@
 
 program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
-statement "statement" = stmt:( label_stmt
-                      / proc_def            /* proc myproc: <stmts> end proc */
+statement "statement" = stmt:(
+                        proc_def            /* proc myproc: <stmts> end proc */
                       / proc_call           /* do myproc */
                       / declare_stmt        /* int i [or] int i = 3 */
                       / assign_stmt         /* let i = i + 1 */
@@ -512,8 +515,11 @@ div            = num:recip denom:div { return {construct: "divide", name: '*', c
  
                // Little hack here to display reciprocals, instead of more complicated tree. 
 recip          = DIVIDE n:atom { return {construct: "recip", name: "/", child_objs: {numerator: {construct: "number", name: 1}, denominator: n}, children:[{construct: "number", name: 1}, n]};}
+               / exp
+
+exp            = base:parens POWER exponent:exp { return {construct: "exp", name: "exp", child_objs: {"base": base, "exponent":  exponent}, children: [base, exponent], line: line(), column: column()}; }
                / parens
- 
+
 parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                / atom
                
@@ -588,6 +594,7 @@ DIVIDE         = operator:'/'  WS  { return operator; }
 MINUS          = operator:'-'  WS  { return operator; }
 MOD            = operator:'%'  WS  { return operator; }
 OPEN_PAREN     = operator:'('  WS  { return operator; }
+POWER          = operator:'^'  WS  { return operator; }
 PLUS           = operator:'+'  WS  { return operator; }
 TIMES          = operator:'*'  WS  { return operator; }
 
