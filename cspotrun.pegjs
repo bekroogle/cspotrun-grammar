@@ -172,16 +172,12 @@
   };
   var traverse_initialize = function(ast) {
     symbol_table.insert(ast);
-    // symbol_table[ast.child_objs["id"]] = { "type": ast.child_objs["typename"], "val": traverse(ast.child_objs["value"])};
   };
   var traverse_loop_stmt = function(ast) {
     while (traverse(ast.child_objs["condition"])) {
       ast.return_val.push(traverse(ast.child_objs["body"]));
     }
 
-    // for (var i = 0; i < return_stack.length; i++) {
-    //   return_val.push(return_stack[i]);
-    // }
     return ast.return_val.join('');
   };
   var traverse_list_elem = function(ast) {
@@ -356,13 +352,11 @@ program        = WS stmts:statement* { return {construct: "program", name: "prog
 statement "statement" = stmt:( label_stmt
                       / proc_def            /* proc myproc: <stmts> end proc */
                       / proc_call           /* do myproc */
-                      / goto_stmt
                       / declare_stmt        /* int i [or] int i = 3 */
                       / assign_stmt         /* let i = i + 1 */
                       / ifthen_stmt         /* if i < 2: <stmts> end if */
                       / count_loop
                       / loop_stmt           /* while i < 2: <stmts> repeat */
-                      
                       / print_stmt) WSNL { return stmt; } /* print 2+2 */
 
 
@@ -384,11 +378,6 @@ end_proc         = END PROC
 proc_call "procedure call"
                  = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
 
-label_stmt       = l:label { return {construct: "label_stmt", name: l.name}; }
-
-label            = LESS i:ID GREATER { return i; }
-
-goto_stmt        = GOTO l:label { return { name: "goto", child_objs: {label: l}, children: [l]}; }
 
 /* * * * * * * * * * * * * * * * * * 
  * VARIABLE HANDLING CONSTRUCTS    *
@@ -409,15 +398,17 @@ assign_stmt "assignment"
                  / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", "line": line(), "column": column(), child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
- * CONDITIONAL EXECUTION CONSTRUCTS*
+ * CONTROL FLOW  CONSTRUCTS        *
  * * * * * * * * * * * * * * * * * */
 
-// If-then construct
+// Conditional Execution (if-then, et al.)
+
 ifthen_stmt "if then"
                = if_else_stmt
                / if_stmt
 
 if_else_stmt   = ip:if_part tp:then_part ep:else_part end_if { return { construct: "if_else", name: "if_else", child_objs: {if_part: ip, then_part: tp, else_part: ep}, children: [ip, tp, ep]};}
+
 if_stmt        = ip:if_part tp:then_part end_if              { return { construct: "if_then", name: "if_then", child_objs: {if_part: ip, then_part: tp}, children: [ip, tp]};}
 
 if_part        = IF cond:bool_expr WS { return {construct: "cond", name: "cond", child_objs: {condition: cond}, children: [cond]};}
@@ -428,8 +419,9 @@ else_part      = ELSE WSNL stmts:statement* { return {construct: "program", name
 
 end_if         = END IF 
 
-// Loop construct
-loop_stmt "loop"
+// Iterative Execution (loops)
+
+loop_stmt "while loop"
                = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
 
 loop_header    = WHILE cond:bool_expr (! TO) COLON? WSNL{ return cond;}
@@ -438,9 +430,11 @@ loop_body      = stmts:statement* { return {construct: "program", name: "loop bo
 
 end_loop       = REPEAT
 
-// For loop
+// Counting loop
 
-count_loop       = lh:count_loop_header lb:loop_body el:end_loop { return {construct: "count_loop", name: "count loop", child_objs: {init: lh, body: lb}, children: [lh, lb]};}
+count_loop "Counting loop"
+               = lh:count_loop_header lb:loop_body el:end_loop { return {construct: "count_loop", name: "count loop", child_objs: {init: lh, body: lb}, children: [lh, lb]};}
+
 count_loop_header
                = WHILE id:ID ASSIGN_OP begin:expr TO end:expr COLON? WSNL { return {construct: "count_init", name: "count init", child_objs: {"id":id, "begin":begin, "end":end}, children: [id, begin, end], line: line(), column: column()};}
 
@@ -502,7 +496,7 @@ add            = l:subtract PLUS r:add { return { construct: "add", name: "+", c
 subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_objs: {left: l, right: r}, children: [l, r]};}
                / neg
                
-               // Little hack here to display negatives, instead of more complicated tree.  
+               // Negative is parsed as multiply(-1, n).
 neg            = MINUS n:mult { return {construct: "multiply", name: "*", child_objs: {left: {construct: "number", name: -1}, right: n}, children: [{construct: "number", name: -1}, n]} ;}
                / mult
 
@@ -572,8 +566,7 @@ keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PRO
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
 
-// Identifier for variables, labels, etc. FolloWS C++ rules.
-
+// Identifiers follow C-style rules.
 ID = ! keywords i:([_a-zA-Z][_a-zA-Z0-9]*) WS { return{ construct: "id", name: text().trim()}; }
 
 DIGIT          = [0-9]
@@ -598,7 +591,7 @@ OPEN_PAREN     = operator:'('  WS  { return operator; }
 PLUS           = operator:'+'  WS  { return operator; }
 TIMES          = operator:'*'  WS  { return operator; }
 
-// Comparison operators:
+// Comparison (relational) operators:
 EQUALS         = '='           WS  { return text().trim(); }
 GREATER_EQUAL  = '>='          WS  { return text().trim(); }
 GREATER        = '>'           WS  { return text().trim(); }
@@ -606,7 +599,7 @@ LESS_EQUAL     = '<='          WS  { return text().trim(); }
 LESS           = '<'           WS  { return text().trim(); }
 NOT_EQUAL      = ('<>' / '!=') WS  { return text().trim(); }
 
-// Keywords
+// Keywords (reserved words)
 DO             = 'do'          WS  { return text().trim(); }
 ELSE           = 'else'        WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
@@ -631,8 +624,10 @@ REAL           = 'real'        WS  { return text().trim(); }
 TEXT           = 'text'        WS  { return text().trim(); }
 
 // Whitespace (space, tab, newline)*
-WS             = WHITESPACE*
-WHITESPACE "whitespace"    = [ \t]
-               /line_comment
+WS                               = WHITESPACE*
+
+WHITESPACE "whitespace"          = [ \t]
+                                 / line_comment
 NL             = [\n\r]
+
 WSNL           = (WHITESPACE/NL)*
