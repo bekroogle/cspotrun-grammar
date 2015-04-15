@@ -2,6 +2,14 @@
 { 
   pegedit_opts = {treenav:"collapse"};
   return_val = [];
+  
+  // Adds elements from array fragments to a referenced list.
+  var addElems = function(list, frag) {
+    for (var i = 0; i < frag.length; i++) {
+      list.push(frag[i]);
+    }
+  };
+  
   // Removes D3js's  circular references so that the tree can be
   // stringified.
   var decircularize = function(graph) {
@@ -15,6 +23,7 @@
       }
     }
   };
+  
   var do_text_method = function(ast) {
     var id = ast.child_objs.variable.name;
     switch (ast.child_objs.method.name) {
@@ -34,6 +43,7 @@
             });
         }
   };
+  
   // Removes the child_objs fields (which are somewhat redundant) from a
   // syntax tree.
   remove_child_objs = function(ast) {
@@ -88,6 +98,7 @@
       this[ast.child_objs["id"]] = {"type": "procedure", "val": ast.child_objs["body"]};
     } 
   };
+
   var traverse_add = function(ast) {
     return traverse(ast.child_objs["left"]) + 
       traverse(ast.child_objs["right"]);
@@ -163,8 +174,12 @@
     // Return stack:
     return ast.return_val.join('');
   };
-  var traverse_csv = function(ast) {
-
+  var traverse_array = function(ast) {
+    var newArray = [];
+    for (var i = 0; i < ast.length; i++) {
+      newArray.push(traverse(ast[i]));
+    }
+    return newArray;
   };
   var traverse_declare = function(ast) {
     ast["child_objs"]["value"] = {construct: "null", name: null};
@@ -175,7 +190,6 @@
     // will have been converted into the reciprocal of the denominator:
     return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
   };
-  
   var traverse_exp = function(ast) {
     return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
@@ -216,16 +230,21 @@
     var new_value = traverse(ast.child_objs.value);
     symbol_table[li_id].val[li_index] = new_value;
   };
+  // Build a new list from a scalar first element and an array of 
+  // follow elements:
   var traverse_list_lit = function(ast) {
-    var list = [traverse(ast.child_objs["head"])];
-
-    if (ast.child_objs["tail"]) {
-      for (var i = 0; i< ast.child_objs["tail"].length; i++) {
-        list.push(traverse(ast.child_objs["tail"][i]));
-      }
-    }
-    return list;
+    var newList = []
+    
+    // Add the first elem:
+    addElems(newList, [traverse(ast.child_objs.first)]);
+    
+    // Add the rest:
+    addElems(newList, traverse_array(ast.child_objs.rest));
+    
+    // Return the constructed list:
+    return newList;
   };
+
   var traverse_method = function(ast) {
     // The name of the receiving object:
     var id = ast.child_objs.variable.name;
@@ -320,16 +339,13 @@
         case "comment"          : return null;
         case "count_init"       : return traverse_count_init(ast);
         case "count_loop"       : return traverse_count_loop(ast);
-        case "csv"              : return traverse_csv(ast);
+        // case "csv"              : return traverse_csv(ast);
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
         case "exp"              : return traverse_exp(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
-        case "list_elem"        : return traverse_list_elem(ast);
-        case "list_item"        : return traverse_list_item(ast);
-        case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
         case "method"           : return traverse_method(ast);
@@ -348,7 +364,7 @@
         case "string_expr"      : return traverse_string_expr(ast);
         case "string_var"       : return traverse_string_var(ast);
         case "variable"         : return traverse_num_var(ast);
-        default: console.error("AST Traversal error: ");
+        default                 : throw ({message: "AST Traversal error: ", context: ast});
       }
     }
   }
@@ -405,7 +421,7 @@ assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt "assignment"
                  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i, value: e}, children: [i, e]}; }
-                 / LET li:list_item ASSIGN_OP e:expr { return { construct: "list_item_assign", name: "li_assign", "line": line(), "column": column(), child_objs: {id: li.child_objs.id.name, index: li.child_objs.index, value: e}, children: [li, e]};}
+                 
 
 /* * * * * * * * * * * * * * * * * * 
  * CONTROL FLOW  CONSTRUCTS        *
@@ -468,11 +484,10 @@ prompt_stmt "prompt"
 expr           = prompt_stmt
                / prime_expr
                / list_lit
-               
 
-list_lit       = OPEN_BRACKET head:expr tail:comma_sep_expr* CLOSE_BRACKET { return {construct: "list_lit", name: "list", child_objs: {"head": head, "tail": tail}, children: [head, tail]};}
+list_lit       = OPEN_BRACKET first:expr rest:csv* CLOSE_BRACKET {return { construct: "list_lit", name: "list_lit", child_objs: {"first": first, "rest": rest}, children: [first, rest]};}
 
-comma_sep_expr = COMMA e:expr { return e; }
+csv            = c:COMMA exp:expr { return exp;}
 
 string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
@@ -544,17 +559,8 @@ integer "integer"
 method         = v:var SPOT m:ID { return { construct: "method", name: "method", child_objs: {"variable": v, "method": m }, children: [v, m], line: line(), column: column()};}
                / var
 
-var            = list_elem
+var            = single
 
-list_elem      = i:ID spec:(list_rest) { return { construct: "list_elem", name: i.name, child_objs: {"id": i, "spec": spec}, children: [spec]};}
-               / single
-
-list_rest      = list_index+ { return text(); }
-
-list_index     = OPEN_BRACKET index:expr CLOSE_BRACKET
-
-
-list_item       = i:ID OPEN_BRACKET index:expr CLOSE_BRACKET { return { construct: "list_item", name: "list item", child_objs: {id: i, "index": index}, children: [i, index]}; }
                 
 single          = i:ID {return {construct: "variable", name: i.name};}
                 / string_cat
