@@ -88,7 +88,6 @@
       return this[key].val;
     },
     li_assign: function(lval, index_list, value) {
-      console.log(value);
       
       var myRe = /string.*/;
 
@@ -97,7 +96,6 @@
       } else {
         value = traverse(value);
       }
-      console.log(value);
       var index_array = traverse_array(lval.child_objs.spec);
       var index_str = "symbol_table['" + lval.child_objs.variable.name + "'].val";
       for (var i = 0; i < index_array.length; i++) {
@@ -246,7 +244,6 @@
     return ast.return_val.join('');
   };
   var traverse_list_elem = function(ast) {
-    // console.log(traverse(ast.child_objs.variable));
     return symbol_table.li_lookup(ast.child_objs.variable, ast.child_objs.spec);
   };
   var traverse_list_item_assign = function(ast) {
