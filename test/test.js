@@ -213,8 +213,12 @@ describe("EXPRESSIONS", function() {
 }); // EXPRESSIONS
 
 describe("LISTS", function() {
-  it("should initialize declared lists with []", function() {
+  it("should set value of uninitialized lists to []", function() {
     var result = check('list l');
+    expect(symbol_table['l'].val).to.eql([]);
+  });
+  it("should allow lists to be set to []", function() {
+    var result = check('list l = []');
     expect(symbol_table['l'].val).to.eql([]);
   });
   it("should allow setting list items to int vars", function() {

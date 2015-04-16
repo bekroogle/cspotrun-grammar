@@ -511,6 +511,9 @@ expr           = prompt_stmt
                / list_lit
 
 list_lit       = OPEN_BRACKET first:expr rest:csv* CLOSE_BRACKET {return { construct: "list_lit", name: "list_lit", child_objs: {"first": first, "rest": rest}, children: [first, rest]};}
+               / empty_list
+
+empty_list     = OPEN_BRACKET CLOSE_BRACKET { return {construct: "empty_list", name: "empty_list"};}
 
 csv            = c:COMMA exp:expr { return exp;}
 
