@@ -213,7 +213,11 @@ describe("EXPRESSIONS", function() {
 }); // EXPRESSIONS
 
 describe("LISTS", function() {
-  it("list item assignments to int vars", function() {
+  it("should initialize declared lists with []", function() {
+    var result = check('list l');
+    expect(symbol_table['l'].val).to.eql([]);
+  });
+  it("should allow setting list items to int vars", function() {
     var result = check('list l = [1,2,3]\nint i = l[2]');
     expect(symbol_table['i']).to.eql({type: 'int', val: 3});
   });
@@ -233,6 +237,10 @@ describe("LISTS", function() {
     var result = check('list l = [1,2,3]\nlet l[5] = 2');
     expect(symbol_table['l']).to.eql({type: 'list', val: [1,2,3,,,2]});
   });
+  it("should allow strings to be assigned to list items", function() {
+    var result = check("list l = ['A',['B1',['B2a', 'B2b']],'C'] let l[2] = 'hello'");
+    expect(symbol_table['l'].val[2]).to.equal('hello');
+  });
   it("should initialize lists with list literal", function() {
     var result = check('list l = [1,2,3] print l');
     expect(result).to.equal('1,2,3');
@@ -248,6 +256,18 @@ describe("LISTS", function() {
   it("should parse 2D list elements", function() {
     var result = check('list l = [[1,2],[2,4],[3,6]]\nprint l[0][0]');
     expect(result).to.equal('1');
+  });
+  it("should parse 3D list literals", function() {
+    var result = check("list l = ['A',['B1',['B2a', 'B2b']],'C']");
+    expect(symbol_table['l'].val).to.eql(['A',['B1',['B2a','B2b']],'C']); 
+  });
+  it("should parse 3D list elements", function() {
+    var result = check("list l = ['A',['B1',['B2a', 'B2b']],'C']\nprint l[1][1][0]");
+    expect(result).to.equal('B2a');
+  });
+  it("should iterate through an array with explicit indexing", function() {
+    var result = check('list l = [2,4,6,8,10]\n while i = 0 to 4\n print l[i] + " "\n repeat');
+    expect(result).to.equal('2 4 6 8 10 ');
   });
 }); // LISTS
 
