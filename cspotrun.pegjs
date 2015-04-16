@@ -291,7 +291,8 @@
     return symbol_table.lookup(ast.name);
   };
   var traverse_print_stmt = function(ast) {
-    return traverse(ast.child_objs["expression"]);
+    return traverse(ast.child_objs["expression"]).toString();
+    
   };
   var traverse_prompt_stmt = function(ast) {
     return prompt(traverse(ast.child_objs["expression"]));
@@ -304,8 +305,8 @@
   };
   var traverse_program = function(ast) {
     if (ast.children) {
-      for (var stmt in ast.children) {
-        ast.return_val.push(traverse(ast.children[stmt]));
+      for (var i = 0; i < ast.children.length; i++) {
+        ast.return_val.push(traverse(ast.children[i]));
       }
     }
 
