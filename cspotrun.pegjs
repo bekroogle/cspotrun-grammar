@@ -88,12 +88,22 @@
       return this[key].val;
     },
     li_assign: function(lval, index_list, value) {
+      console.log(value);
+      
+      var myRe = /string.*/;
+
+      if (myRe.test(value.construct)) {
+        value = '"' + traverse(value) + '"';
+      } else {
+        value = traverse(value);
+      }
+      console.log(value);
       var index_array = traverse_array(lval.child_objs.spec);
       var index_str = "symbol_table['" + lval.child_objs.variable.name + "'].val";
       for (var i = 0; i < index_array.length; i++) {
         index_str = index_str + "[" + index_array[i] + "]";
-      }
-      index_str = index_str + " = " + traverse(value);
+       }
+      index_str = index_str + " = " + value;
       eval(index_str);
     },
     li_lookup: function(key, index_list) {
@@ -438,7 +448,7 @@ assign_stmt "assignment"
                  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i, value: e}, children: [i, e]}; }
                  / list_item_assign
 
-list_item_assign = LET i:list_elem ASSIGN_OP e:expr { return {construct: "list_item_assign", name: "list_item_assign", line: line(), column: column(), child_objs: {lval: i, rval: e}, children: [i, e]};}
+list_item_assign = LET i:list_elem e:assign_pred { return {construct: "list_item_assign", name: "list_item_assign", line: line(), column: column(), child_objs: {lval: i, rval: e}, children: [i, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * CONTROL FLOW  CONSTRUCTS        *
