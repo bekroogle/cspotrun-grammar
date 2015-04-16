@@ -195,7 +195,13 @@
     return newArray;
   };
   var traverse_declare = function(ast) {
-    ast.child_objs.value = {construct: "null", name: null};
+    
+    if (ast.child_objs.typename == "list") {
+    
+      ast.child_objs.value = {construct: "empty_list", name: "empty_list"};
+    } else {
+     ast.child_objs.value = {construct: "null", name: null};
+    }
     symbol_table.insert(ast);
   };
   var traverse_divide = function(ast) {
@@ -203,6 +209,7 @@
     // will have been converted into the reciprocal of the denominator:
     return traverse(ast.child_objs["numerator"]) * traverse(ast.child_objs.denominator);
   };
+  var traverse_empty_list = function(ast) {};
   var traverse_exp = function(ast) {
     return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
@@ -249,7 +256,6 @@
     // Return the constructed list:
     return newList;
   };
-
   var traverse_method = function(ast) {
     // The name of the receiving object:
     var id = ast.child_objs.variable.name;
@@ -347,6 +353,7 @@
         case "count_loop"       : return traverse_count_loop(ast);        
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
+        case "empty_list"       : return [];
         case "exp"              : return traverse_exp(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
