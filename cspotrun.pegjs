@@ -87,8 +87,27 @@
     lookup: function(key) {
       return this[key].val;
     },
-    li_lookup: function(key, index) {
-      return this[key].val[index];
+    li_assign: function(lval, index_list, value) {
+      console.log(lval.child_objs.variable.name);
+      console.log(traverse_array(lval.child_objs.spec));
+      var index_array = traverse_array(lval.child_objs.spec);
+      var index_str = "symbol_table['" + lval.child_objs.variable.name + "'].val";
+      for (var i = 0; i < index_array.length; i++) {
+        index_str = index_str + "[" + index_array[i] + "]";
+      }
+      index_str = index_str + " = " + traverse(value);
+      eval(index_str);
+      console.log(value);
+      // symbol_table[lval.child_objs.variable.name].val[traverse_array(lval.child_objs.spec)] = 99;
+//      for (var i = 0; i < index_list.length; i++)
+    },
+    li_lookup: function(key, index_list) {
+      var listVal = this.lookup(key.name);    
+      for (var i = 0; i < index_list.length; i++) {
+        listVal = listVal[traverse(index_list[i])];
+      }
+      console.log(listVal);
+      return listVal;
     },
     type_of: function(key) {
       return this[key].type;
@@ -182,7 +201,7 @@
     return newArray;
   };
   var traverse_declare = function(ast) {
-    ast["child_objs"]["value"] = {construct: "null", name: null};
+    ast.child_objs.value = {construct: "null", name: null};
     symbol_table.insert(ast);
   };
   var traverse_divide = function(ast) {
@@ -216,19 +235,11 @@
     return ast.return_val.join('');
   };
   var traverse_list_elem = function(ast) {
-    var val_list = symbol_table.lookup(ast.child_objs["id"].name);
-    var spec_list = ast.child_objs["spec"];
-    var elem_string = "val_list" + spec_list;
-    return eval(elem_string);
-  };
-  var traverse_list_item = function(ast) {
-    return symbol_table.li_lookup(ast.child_objs["id"].name, traverse(ast.child_objs["index"]));
+    // console.log(traverse(ast.child_objs.variable));
+    return symbol_table.li_lookup(ast.child_objs.variable, ast.child_objs.spec);
   };
   var traverse_list_item_assign = function(ast) {
-    var li_id = ast.child_objs.id;
-    var li_index = traverse(ast.child_objs.index);
-    var new_value = traverse(ast.child_objs.value);
-    symbol_table[li_id].val[li_index] = new_value;
+    symbol_table.li_assign(ast.child_objs.lval, ast.child_objs.lval.spec, ast.child_objs.rval);
   };
   // Build a new list from a scalar first element and an array of 
   // follow elements:
@@ -316,6 +327,7 @@
       default      : throw("Non-implemented relational operator."); 
     }
   };
+  var traverse_spec = function(ast) {};
   var traverse_string_expr = function(ast) {
     return ast.name;
   };
@@ -338,14 +350,15 @@
         case "bool_lit"         : return traverse_bool_lit(ast);
         case "comment"          : return null;
         case "count_init"       : return traverse_count_init(ast);
-        case "count_loop"       : return traverse_count_loop(ast);
-        // case "csv"              : return traverse_csv(ast);
+        case "count_loop"       : return traverse_count_loop(ast);        
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
         case "exp"              : return traverse_exp(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
+        case "list_elem"        : return traverse_list_elem(ast);
+        case "list_item_assign" : return traverse_list_item_assign(ast);
         case "list_lit"         : return traverse_list_lit(ast);
         case "loop_stmt"        : return traverse_loop_stmt(ast);
         case "method"           : return traverse_method(ast);
@@ -360,6 +373,7 @@
         case "prompt_stmt"      : return traverse_prompt_stmt(ast);
         case "recip"            : return traverse_recip(ast);
         case "relational_expr"  : return traverse_relational_expr(ast);
+        case "spec"             : return traverse_spec(ast);
         case "string_cat"       : return traverse_string_cat(ast);
         case "string_expr"      : return traverse_string_expr(ast);
         case "string_var"       : return traverse_string_var(ast);
@@ -421,7 +435,9 @@ assign_pred      = ASSIGN_OP e:expr { return e; }
 
 assign_stmt "assignment"
                  = LET i:ID ASSIGN_OP e:expr { return {construct: "assign", name: "assign", line: line(), column: column(), child_objs: {id: i, value: e}, children: [i, e]}; }
-                 
+                 / list_item_assign
+
+list_item_assign = LET i:list_elem ASSIGN_OP e:expr { return {construct: "list_item_assign", name: "list_item_assign", line: line(), column: column(), child_objs: {lval: i, rval: e}, children: [i, e]};}
 
 /* * * * * * * * * * * * * * * * * * 
  * CONTROL FLOW  CONSTRUCTS        *
@@ -449,7 +465,7 @@ end_if         = END IF
 
 loop_stmt "while loop"
                = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
-
+ 
 loop_header    = WHILE cond:bool_expr (! TO) COLON? WSNL{ return cond;}
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
@@ -506,7 +522,7 @@ double_quoted_str
 single_quoted_str
                = string:(QUOTE quo_str_part QUOTE) WS { var myre = /\'/g; return { construct: "string_expr", name: string.join('').replace(myre, "")};}
 
-string_var     = id:ID &{true} {return {construct: "string_var", name: id.name};}
+string_var     = id:ID {return {construct: "string_var", name: id.name};}
 
 dbl_quo_str_part
                = n:(! DBL_QUOTE .)* { return text(); }
@@ -547,6 +563,21 @@ parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                
 atom           = n:num_lit { return {construct: "number", name: n}; }
                / method
+               / list_elem
+
+method         = v:var SPOT m:ID { return { construct: "method", name: "method", child_objs: {"variable": v, "method": m }, children: [v, m], line: line(), column: column()};}
+
+
+list_elem      =v:var spec:specifier+{ return {construct: "list_elem", name:"list_elem", child_objs: {"variable":v, "spec": spec}, children: [v, spec], line: line(), column: column()};}
+               / var
+
+specifier      = OPEN_BRACKET e:expr CLOSE_BRACKET { return e; }
+
+var            = single
+                
+single         = i:ID {return {construct: "variable", name: i.name};}
+                / string_cat
+
 
 num_lit        = f:float { return parseFloat(f); }
                / i:integer { return parseInt(i); }
@@ -556,14 +587,6 @@ float  "real"  = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
 integer "integer" 
                = d:DIGIT+             WS  { return text().trim(); }
 
-method         = v:var SPOT m:ID { return { construct: "method", name: "method", child_objs: {"variable": v, "method": m }, children: [v, m], line: line(), column: column()};}
-               / var
-
-var            = single
-
-                
-single          = i:ID {return {construct: "variable", name: i.name};}
-                / string_cat
 
 // Boolean expressions:
 bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
@@ -571,6 +594,7 @@ bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
 
 bool_lit       = TRUE 
                / FALSE 
+
 
 relational_expr= l:expr op:rel_op r:expr {return {construct: "relational_expr", name: op, child_objs: {operator: op, "l": l, "r": r}, children: [l, r]};}
 

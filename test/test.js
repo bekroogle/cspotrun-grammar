@@ -103,6 +103,21 @@ describe("PRINT STATEMENTS", function() {
   });
 }); // PRINT STATEMENTS
 
+describe("COMMENTS", function() {
+  it("should effectively ignore a single comment", function() {
+    var result = check('# nobody here but us comments');
+    expect(result).to.equal('');
+  });
+  it("should allow a program to start with a comment", function() {
+    var result=check('# cool\nprint "cool"');
+    expect(result).to.equal('cool');
+  });
+  it("should allow a program to end with a comment", function() {
+    var result=check('print "cool"\n# prog is over, bud.');
+    expect(result).to.equal('cool');
+  });
+}); // COMMENTS
+
 describe("CONDITIONALS", function() {
   describe("If-then guards", function() {
     describe("Boolean literals", function() {
@@ -153,17 +168,6 @@ describe("CONDITIONALS", function() {
       });
     }); // If-then gaurds
     describe("If-else", function () {
-      // describe("else if", function() {
-      //   it("should allow chaining of exclusive conditions through else if", function () {
-      //     var result = check('int i = 3\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
-      //     expect(result).to.equal('yay!');
-      //     var result = check('int i = 2\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
-      //     expect(result).to.equal('oops again');
-      //     var result = check('int i = 1\n if i = 1 then\n   print "oops"\n else if i = 2 then\n   print "oops again"\n else if i = 3 then\n   print "yay!\n end if');
-      //     expect(result).to.equal('oops');
-      //   });
-      // });
-
       it("should only do the if-part for true gaurd expressions", function() {
         var result = check('if 1 = 1  \nprint "true"\nelse\n print "false"\n end if');
         expect(result).to.equal('true');
@@ -176,6 +180,77 @@ describe("CONDITIONALS", function() {
 
   }); 
 });
+
+describe("EXPRESSIONS", function() {
+  it("should handle simple integer division", function() {
+    var result = check('int i = 10 / 3\nprint i');
+    expect(result).to.equal('3');
+  });
+  it("should handle simple floating point division", function() {
+    var result = check('real r = 10 / 3\nprint r');
+    expect(symbol_table["r"].val).to.be.within(3,4);
+  });
+  it("should handle <int> % <int> expressions", function() {
+    var result = check('int i = 5 % 2\nprint i');
+    expect(result).to.equal('1');
+  });
+  it("should handle <number> - <variable>", function() {
+    var result = check('int i = 5\n int j = 100 - i\n print j');
+    expect(result).to.equal('95');
+  });
+  it("should handle simple exponentiation", function() {
+    var result = check('int i = 2 ^ 3');
+    expect(symbol_table.lookup('i')).to.equal(8);
+  });
+  it("should handle variable exponentiation", function() {
+    var result = check('int i = 2 int j = 3 int k = i ^ j');
+    expect(symbol_table.lookup('k')).to.equal(8);
+  });
+  it("should handle parenthesized exponents", function() {
+    var result = check('int i = 2 * (3 + 2) ^ 2');
+    expect(symbol_table.lookup('i')).to.equal(50);
+  })
+}); // EXPRESSIONS
+
+describe("LISTS", function() {
+  it("list item assignments to int vars", function() {
+    var result = check('list l = [1,2,3]\nint i = l[2]');
+    expect(symbol_table['i']).to.eql({type: 'int', val: 3});
+  });
+  it("should assign to lists with list literal", function() {
+    var result = check('list l\nlet l = [1,2,3]\nprint l');
+    expect(result).to.equal('1,2,3');
+  });
+  it("should assign to lists with list variable", function() {
+    var result = check('list l = [1,2,3]\nlist m\nlet m = l\nprint m');
+    expect(result).to.equal('1,2,3');
+  });
+  it("should assign to existing list items", function() {
+    var result = check('list l = [1,2,3]\nlet l[0] = 2');
+    expect(symbol_table['l']).to.eql({type: 'list', val: [2,2,3]});
+  });
+  it("should assign to new list items", function() {
+    var result = check('list l = [1,2,3]\nlet l[5] = 2');
+    expect(symbol_table['l']).to.eql({type: 'list', val: [1,2,3,,,2]});
+  });
+  it("should initialize lists with list literal", function() {
+    var result = check('list l = [1,2,3] print l');
+    expect(result).to.equal('1,2,3');
+  });
+  it("should initialize lists with list variable", function() {
+    var result = check('list l = [1,2,3]\nlist m = l\nprint m');
+    expect(result).to.equal('1,2,3');
+  }); 
+  it("should parse 2D list literals", function() {
+    var result = check('list l = [[1,2],[2,4],[3,6]]');
+    expect(symbol_table['l']).to.eql({type: 'list', val: [[1,2],[2,4],[3,6]]});
+  }); 
+  it("should parse 2D list elements", function() {
+    var result = check('list l = [[1,2],[2,4],[3,6]]\nprint l[0][0]');
+    expect(result).to.equal('1');
+  });
+}); // LISTS
+
 
 describe("LOOPS", function() {
   describe("While loops", function() {
@@ -199,21 +274,23 @@ describe("LOOPS", function() {
   }); // Counting loops
 });
 
-describe("COMMENTS", function() {
-  it("should effectively ignore a single comment", function() {
-    var result = check('# nobody here but us comments');
-    expect(result).to.equal('');
-  });
-  it("should allow a program to start with a comment", function() {
-    var result=check('# cool\nprint "cool"');
-    expect(result).to.equal('cool');
-  });
-  it("should allow a program to end with a comment", function() {
-    var result=check('print "cool"\n# prog is over, bud.');
-    expect(result).to.equal('cool');
-  });
-}); // COMMENTS
 
+
+
+
+
+describe("STRINGS", function() {
+  describe("Methods", function() {
+    it("should return the length", function() {
+      var result = check('text t = "spot"\nprint t.length');
+      expect(result).to.equal('4');
+    });
+    it("should convert the string to uppercase", function() {
+      var result = check('text t = "spot"\nprint t.uppercase');
+      expect(result).to.equal("SPOT");
+    });
+  }); // Methods 
+});
 describe("SYMBOL TABLE", function() {
   describe("Initialized variables", function() {
     it("should properly cast ints", function() {
@@ -259,91 +336,7 @@ describe("SYMBOL TABLE", function() {
       });
     }); // Cast assignments
   });// Assignents
-
-  describe("LISTS", function() {
-    it("list item assignments to int vars", function() {
-      var result = check('list l = [1,2,3]\nint i = l[2]');
-      expect(symbol_table['i']).to.eql({type: 'int', val: 3});
-    });
-    it("should assign to lists with list literal", function() {
-      var result = check('list l\nlet l = [1,2,3]\nprint l');
-      expect(result).to.equal('1,2,3');
-    });
-    it("should assign to lists with list variable", function() {
-      var result = check('list l = [1,2,3]\nlist m\nlet m = l\nprint m');
-      expect(result).to.equal('1,2,3');
-    });
-    it("should assign to existing list items", function() {
-      var result = check('list l = [1,2,3]\nlet l[0] = 2');
-      expect(symbol_table['l']).to.eql({type: 'list', val: [2,2,3]});
-    });
-    it("should assign to new list items", function() {
-      var result = check('list l = [1,2,3]\nlet l[5] = 2');
-      expect(symbol_table['l']).to.eql({type: 'list', val: [1,2,3,,,2]});
-    });
-    it("should initialize lists with list literal", function() {
-      var result = check('list l = [1,2,3] print l');
-      expect(result).to.equal('1,2,3');
-    });
-    it("should initialize lists with list variable", function() {
-      var result = check('list l = [1,2,3]\nlist m = l\nprint m');
-      expect(result).to.equal('1,2,3');
-    }); 
-    it("should parse 2D list literals", function() {
-      var result = check('list l = [[1,2],[2,4],[3,6]]');
-      expect(symbol_table['l']).to.eql({type: 'list', val: [[1,2],[2,4],[3,6]]});
-    }); 
-    it("should parse 2D list elements", function() {
-      var result = check('list l = [[1,2],[2,4],[3,6]]\nprint l[0][0]');
-      expect(result).to.equal('1');
-    });
-  }); // LISTS
 }); // SYMBOL_TABLE
-
-describe("EXPRESSIONS", function() {
-  it("should handle simple integer division", function() {
-    var result = check('int i = 10 / 3\nprint i');
-    expect(result).to.equal('3');
-  });
-  it("should handle simple floating point division", function() {
-    var result = check('real r = 10 / 3\nprint r');
-    expect(symbol_table["r"].val).to.be.within(3,4);
-  });
-  it("should handle <int> % <int> expressions", function() {
-    var result = check('int i = 5 % 2\nprint i');
-    expect(result).to.equal('1');
-  });
-  it("should handle <number> - <variable>", function() {
-    var result = check('int i = 5\n int j = 100 - i\n print j');
-    expect(result).to.equal('95');
-  });
-  it("should handle simple exponentiation", function() {
-    var result = check('int i = 2 ^ 3');
-    expect(symbol_table.lookup('i')).to.equal(8);
-  });
-  it("should handle variable exponentiation", function() {
-    var result = check('int i = 2 int j = 3 int k = i ^ j');
-    expect(symbol_table.lookup('k')).to.equal(8);
-  });
-  it("should handle parenthesized exponents", function() {
-    var result = check('int i = 2 * (3 + 2) ^ 2');
-    expect(symbol_table.lookup('i')).to.equal(50);
-  })
-}); // EXPRESSIONS
-
-describe("STRINGS", function() {
-  describe("Methods", function() {
-    it("should return the length", function() {
-      var result = check('text t = "spot"\nprint t.length');
-      expect(result).to.equal('4');
-    });
-    it("should convert the string to uppercase", function() {
-      var result = check('text t = "spot"\nprint t.uppercase');
-      expect(result).to.equal("SPOT");
-    });
-  }); // Methods 
-});
-
 /*
 
 describe("SEQUENCES", function() {
