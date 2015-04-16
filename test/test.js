@@ -337,7 +337,6 @@ describe("SYMBOL TABLE", function() {
     }); // Cast assignments
   });// Assignents
 }); // SYMBOL_TABLE
-/*
 
 describe("SEQUENCES", function() {
   it("should execute simple assignments and print statements in sequential, imperative manner", function() {
@@ -357,5 +356,3 @@ describe("SEQUENCES", function() {
     expect(result).to.equal('1');
   });
 });
-
-*/

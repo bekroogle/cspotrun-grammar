@@ -88,8 +88,6 @@
       return this[key].val;
     },
     li_assign: function(lval, index_list, value) {
-      console.log(lval.child_objs.variable.name);
-      console.log(traverse_array(lval.child_objs.spec));
       var index_array = traverse_array(lval.child_objs.spec);
       var index_str = "symbol_table['" + lval.child_objs.variable.name + "'].val";
       for (var i = 0; i < index_array.length; i++) {
@@ -97,16 +95,12 @@
       }
       index_str = index_str + " = " + traverse(value);
       eval(index_str);
-      console.log(value);
-      // symbol_table[lval.child_objs.variable.name].val[traverse_array(lval.child_objs.spec)] = 99;
-//      for (var i = 0; i < index_list.length; i++)
     },
     li_lookup: function(key, index_list) {
       var listVal = this.lookup(key.name);    
       for (var i = 0; i < index_list.length; i++) {
         listVal = listVal[traverse(index_list[i])];
       }
-      console.log(listVal);
       return listVal;
     },
     type_of: function(key) {
