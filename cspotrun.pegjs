@@ -337,7 +337,11 @@
   };
   var traverse_spec = function(ast) {};
   var traverse_string_expr = function(ast) {
-    return ast.name;
+    if (ast.name === "endl") {
+      return "\n";
+    } else {
+      return ast.name;
+    }
   };
   var traverse_string_cat = function(ast) {
     var new_string = traverse(ast.child_objs["l"]) + traverse(ast.child_objs["r"]);
@@ -521,7 +525,7 @@ string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat
                / string_expr
 
 string_expr    = string_lit
-               / ENDL { return {construct: "string_expr", name: "\n"}; } 
+               / ENDL { return {construct: "string_expr", name: "endl"}; } 
                / string_var
 
 string_lit "string literal"
