@@ -8,101 +8,6 @@ var check = function(str) {
   return traverse(parse(str));
 };
 
-describe("PRINT STATEMENTS", function() {
-  describe("print on the right line", function() {
-    it("Multiple print <string> should output to same line ", function() {
-      var result = check('print "hello "\nprint "world."');
-      expect(result).to.equal('hello world.');
-    });
-    it("Multiple print <number> should output to same line ", function() {
-      var result = check('print 3\nprint 5');
-      expect(result).to.equal('35');
-    });
-    it("Should handle newline reserved word", function() {
-      var result = check('print "hello" + endl + "goodbye"');
-      expect(result).to.equal("hello\ngoodbye");
-      expect(result).to.not.equal("hellogoodbye");
-      expect(result).to.not.equal("hello\\ngoodbye");
-    });
-  });
-  describe("handle single or double-quoted strings", function() {
-    it('should handle simple single quoted strings', function() {
-      var result = check("print 'hello'");
-      expect(result).to.equal('hello');
-    });
-    it('should handle single quoted strings containing double quote char', function() {
-      var result = check("print 'hello\"'");
-      expect(result).to.equal('hello\"');
-    });
-    it('should handle double single quoted strings', function() {
-      var result = check('print "hello"');
-      expect(result).to.equal('hello');
-    });
-    it('should handle double quoted strings containing single quote char', function() {
-      var result = check('print "hello\'"');
-      expect(result).to.equal("hello'");
-    });
-  });
-  describe("Proper spacing in contatenating", function() {
-    it("Should handle trailing spaces in string literals", function() {
-      var result = check('print "cool " + "cool"');
-      expect(result).to.equal('cool cool');
-    });
-    it("Should handle trailing spaces in string variables", function() {
-      var result = check('text t = "cool "\nprint t + t');
-      expect(result).to.equal('cool cool ');
-    });
-    it("Should handle leading spaces in string literals", function() {
-      var result = check('print "cool" + " cool"');
-      expect(result).to.equal('cool cool');
-    });
-    it("Should handle leading spaces in string variables", function() {
-      var result = check('text t = " cool"\nprint t + t');
-      expect(result).to.equal(' cool cool');
-    });
-    it("Should handle concatenated spaces", function() {
-      var result = check('print "cool" + " " + "cool"');
-      expect(result).to.equal('cool cool');
-    });
-  });
-  describe("Printing arithmetic expressions", function() {
-    it("should print simple addition expressions using int literals", function() {
-      var result = check('print 3+1');
-      expect(result).to.equal('4');
-    });
-    it("should print simple multiplication expressions using int literals", function() {
-      // multiplication of two literals
-      var result = check('print 3*2');
-      expect(result).to.equal('6');
-    });
-    it("should print numerical variable values", function() {
-      var result = check('int i = 3 print i');
-      expect(result).to.equal('3');
-    });
-    it("should print simple addition expressions using int variables", function() {
-      var result = check('int i = 3\nint j = 2\nprint i+j');
-      expect(result).to.equal('5');
-    });  
-    it("should print simple multiplication expressions using int variables", function() {
-      // multiplication of two literals
-      var result = check('int i = 3\nint j = 2\nprint i*j');
-      expect(result).to.equal('6');
-    });
-  });
-  describe("Printing string expressions", function() {
-    it("should print string literals", function() {
-      var result = check('print "hello world"');
-      expect(result).to.equal("hello world");
-    });
-    it("should print values of string variables", function() {
-      var result = check(
-        'text t = "hello world"\
-        print t');
-      expect(result).to.equal("hello world");
-    });
-  });
-}); // PRINT STATEMENTS
-
 describe("COMMENTS", function() {
   it("should effectively ignore a single comment", function() {
     var result = check('# nobody here but us comments');
@@ -275,7 +180,6 @@ describe("LISTS", function() {
   });
 }); // LISTS
 
-
 describe("LOOPS", function() {
   describe("While loops", function() {
     it("Should iterate a simlpe loop", function() {
@@ -298,10 +202,119 @@ describe("LOOPS", function() {
   }); // Counting loops
 });
 
+describe("PRINT STATEMENTS", function() {
+  describe("print on the right line", function() {
+    it("Multiple print <string> should output to same line ", function() {
+      var result = check('print "hello "\nprint "world."');
+      expect(result).to.equal('hello world.');
+    });
+    it("Multiple print <number> should output to same line ", function() {
+      var result = check('print 3\nprint 5');
+      expect(result).to.equal('35');
+    });
+    it("Should handle newline reserved word", function() {
+      var result = check('print "hello" + endl + "goodbye"');
+      expect(result).to.equal("hello\ngoodbye");
+      expect(result).to.not.equal("hellogoodbye");
+      expect(result).to.not.equal("hello\\ngoodbye");
+    });
+  });
+  describe("handle single or double-quoted strings", function() {
+    it('should handle simple single quoted strings', function() {
+      var result = check("print 'hello'");
+      expect(result).to.equal('hello');
+    });
+    it('should handle single quoted strings containing double quote char', function() {
+      var result = check("print 'hello\"'");
+      expect(result).to.equal('hello\"');
+    });
+    it('should handle double single quoted strings', function() {
+      var result = check('print "hello"');
+      expect(result).to.equal('hello');
+    });
+    it('should handle double quoted strings containing single quote char', function() {
+      var result = check('print "hello\'"');
+      expect(result).to.equal("hello'");
+    });
+  });
+  describe("Proper spacing in contatenating", function() {
+    it("Should handle trailing spaces in string literals", function() {
+      var result = check('print "cool " + "cool"');
+      expect(result).to.equal('cool cool');
+    });
+    it("Should handle trailing spaces in string variables", function() {
+      var result = check('text t = "cool "\nprint t + t');
+      expect(result).to.equal('cool cool ');
+    });
+    it("Should handle leading spaces in string literals", function() {
+      var result = check('print "cool" + " cool"');
+      expect(result).to.equal('cool cool');
+    });
+    it("Should handle leading spaces in string variables", function() {
+      var result = check('text t = " cool"\nprint t + t');
+      expect(result).to.equal(' cool cool');
+    });
+    it("Should handle concatenated spaces", function() {
+      var result = check('print "cool" + " " + "cool"');
+      expect(result).to.equal('cool cool');
+    });
+  });
+  describe("Printing arithmetic expressions", function() {
+    it("should print simple addition expressions using int literals", function() {
+      var result = check('print 3+1');
+      expect(result).to.equal('4');
+    });
+    it("should print simple multiplication expressions using int literals", function() {
+      // multiplication of two literals
+      var result = check('print 3*2');
+      expect(result).to.equal('6');
+    });
+    it("should print numerical variable values", function() {
+      var result = check('int i = 3 print i');
+      expect(result).to.equal('3');
+    });
+    it("should print simple addition expressions using int variables", function() {
+      var result = check('int i = 3\nint j = 2\nprint i+j');
+      expect(result).to.equal('5');
+    });  
+    it("should print simple multiplication expressions using int variables", function() {
+      // multiplication of two literals
+      var result = check('int i = 3\nint j = 2\nprint i*j');
+      expect(result).to.equal('6');
+    });
+  });
+  describe("Printing string expressions", function() {
+    it("should print string literals", function() {
+      var result = check('print "hello world"');
+      expect(result).to.equal("hello world");
+    });
+    it("should print values of string variables", function() {
+      var result = check(
+        'text t = "hello world"\
+        print t');
+      expect(result).to.equal("hello world");
+    });
+  });
+}); // PRINT STATEMENTS
 
-
-
-
+describe("SEQUENCES", function() {
+  it("should execute simple assignments and print statements in sequential, imperative manner", function() {
+    var result = check('int i = 3\nprint i\nlet i = 2');
+    expect(result).to.equal('3');
+  });
+  it("should execute list assignments and print statements in sequential, imperative manner", function() {
+    var result = check('list l =[1,2,3]\nprint l + endl\nlet l = [2,4,6]');
+    expect(result).to.equal('1,2,3\n');
+  });
+  it("should execute list-elem assignments and print statements in sequential, imperative manner", function() {
+    var result = check('list l = [1,2,3]\nlet l = [2,4,6]\nprint l\nlet l[0] = 7');
+    expect(result).to.equal('2,4,6');
+  });
+  it("should exec list-elem assigns and list-elem print stmts in seq., imperative manner", function() {
+    var result = check('list l = [1,2]\nprint l[0]\nlet l[0] = 2');
+    expect(result).to.equal('1');
+  });
+}); // SEQUENCES
 
 describe("STRINGS", function() {
   describe("Methods", function() {
@@ -314,7 +327,8 @@ describe("STRINGS", function() {
       expect(result).to.equal("SPOT");
     });
   }); // Methods 
-});
+}); // STRINGS
+
 describe("SYMBOL TABLE", function() {
   describe("Initialized variables", function() {
     it("should properly cast ints", function() {
@@ -362,21 +376,3 @@ describe("SYMBOL TABLE", function() {
   });// Assignents
 }); // SYMBOL_TABLE
 
-describe("SEQUENCES", function() {
-  it("should execute simple assignments and print statements in sequential, imperative manner", function() {
-    var result = check('int i = 3\nprint i\nlet i = 2');
-    expect(result).to.equal('3');
-  });
-  it("should execute list assignments and print statements in sequential, imperative manner", function() {
-    var result = check('list l =[1,2,3]\nprint l + endl\nlet l = [2,4,6]');
-    expect(result).to.equal('1,2,3\n');
-  });
-  it("should execute list-elem assignments and print statements in sequential, imperative manner", function() {
-    var result = check('list l = [1,2,3]\nlet l = [2,4,6]\nprint l\nlet l[0] = 7');
-    expect(result).to.equal('2,4,6');
-  });
-  it("should exec list-elem assigns and list-elem print stmts in seq., imperative manner", function() {
-    var result = check('list l = [1,2]\nprint l[0]\nlet l[0] = 2');
-    expect(result).to.equal('1');
-  });
-});
