@@ -117,6 +117,12 @@ describe("EXPRESSIONS", function() {
   })
 }); // EXPRESSIONS
 
+describe("FETCH", function() {
+  it("should properly parse a fetch statement", function() {
+    var result = parse('fetch myname/mylang');    
+  });
+});
+
 describe("LISTS", function() {
   it("should set value of uninitialized lists to []", function() {
     var result = check('list l');

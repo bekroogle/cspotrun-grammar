@@ -1,5 +1,10 @@
 //test
 { 
+  language = {
+    user: "bekroogle",
+    repo: "cspotrun"
+  };
+
   pegedit_opts = {treenav:"collapse"};
   return_val = [];
   
@@ -221,6 +226,15 @@
   var traverse_exp = function(ast) {
     return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
+  var do_fetch = function(usr,rpo) {
+    var contents_uri = "https:/api.github.com/repos/"+ usr.name +"/"+ 
+        rpo.name + "/contents/"+ rpo.name +".pegjs";
+    $.get(contents_uri, function(repo) {
+        fetched_parser = PEG.buildParser(atob(repo.content));
+      });
+  };
+
+  
   var traverse_if_else = function(ast) {
     if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
       return traverse(ast.child_objs["then_part"]);
@@ -367,6 +381,7 @@
         case "divide"           : return traverse_divide(ast);
         case "empty_list"       : return [];
         case "exp"              : return traverse_exp(ast);
+        case "fetch_stmt"       : return traverse_fetch_stmt(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
@@ -400,6 +415,7 @@
  * Grammar:                                                                *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+start          = fs:fetch_stmt? rest:(.*) {return (fetched_parser.parse(rest.join('')));}
 program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement "statement" = stmt:(
@@ -414,6 +430,8 @@ statement "statement" = stmt:(
 
 
 line_comment "comment"= HASH (!NL .)* WSNL
+
+fetch_stmt       = f:FETCH user:ID DIVIDE repo:ID WSNL {do_fetch(user, repo);}
 
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
@@ -521,7 +539,8 @@ empty_list     = OPEN_BRACKET CLOSE_BRACKET { return {construct: "empty_list", n
 
 csv            = c:COMMA exp:expr { return exp;}
 
-string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
+string_cat "string"
+               = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
 
 string_expr    = string_lit
@@ -620,7 +639,7 @@ rel_op         = NOT_EQUAL / EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LES
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
+keywords       =  DO / END / ENDL / FALSE / FETCH / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
 
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
@@ -664,6 +683,7 @@ DO             = 'do'          WS  { return text().trim(); }
 ELSE           = 'else'        WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
 ENDL           = 'endl'        WS  { return text().trim(); }
+FETCH          = 'fetch'     _ WS  { return text().trim(); }
 FALSE          = 'false'       WS  { return text().trim(); }
 GOTO           = 'goto'        WS  { return text().trim(); }
 IF             = 'if'          WS  { return text().trim(); }
@@ -686,8 +706,12 @@ TEXT           = 'text'        WS  { return text().trim(); }
 // Whitespace (space, tab, newline)*
 WS                               = WHITESPACE*
 
+_ = WHITESPACE
+
 WHITESPACE "whitespace"          = [ \t]
                                  / line_comment
+
+
 NL             = [\n\r]
 
 WSNL           = (WHITESPACE/NL)*
