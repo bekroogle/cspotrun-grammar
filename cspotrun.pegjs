@@ -1,10 +1,5 @@
 //test
 { 
-  language = {
-    user: "bekroogle",
-    repo: "cspotrun"
-  };
-
   pegedit_opts = {treenav:"collapse"};
   return_val = [];
   
@@ -372,7 +367,6 @@
         case "divide"           : return traverse_divide(ast);
         case "empty_list"       : return [];
         case "exp"              : return traverse_exp(ast);
-        case "fetch_stmt"       : return traverse_fetch_stmt(ast);
         case "if_else"          : return traverse_if_else(ast);
         case "if_then"          : return traverse_if_then(ast);
         case "initialize"       : return traverse_initialize(ast);
@@ -400,63 +394,13 @@
         default                 : throw ({message: "AST Traversal error: ", context: ast});
       }
     }
-  };
-
-  var fParse = function(tgt, srcStr) {
-    var fParser;
-    
-    if (tgt.type === 'uri') {
-      $.get(tgt.value, function(data) {
-        editor.getSession().setValue(data,0);
-        buildParser();
-        doParse(srcStr);
-      });
-    } else if (tgt.type === 'repo') {
-      var contents_uri = "https:/api.github.com/repos/"+ tgt.val.user +"/"+ 
-        tgt.val.repo + "/contents/"+ tgt.val.repo +".pegjs";
-      $.get(contents_uri, function(data) {
-        fParser = PEG.buildParser(atob(data));
-        
-      });
-    }
-  };
-
-  var getGrammarFromRepo = function(user, repo) {
-    var contents_uri = "https:/api.github.com/repos/"+ user +"/"+ 
-        repo + "/contents/"+ repo +".pegjs";
-    var grammar_str = "";
-    $.get(contents_uri, function(r) {
-        grammar_str = PEG.buildParser(atob(r.content));
-      });
-    return grammar_str;
-  };
-
-  getGrammarFromUri = function(uri) {
-    console.log("getGrammarFromUri");
-    
-    $.get(uri, function(data) {
-      console.log("in $.get(uri)");
-      grammar_str = data;
-      return grammar_str;
-    });
-  };   
+  }
 }
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Grammar:                                                                *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-start          = fs:fetch_stmt rest:(. / [\n\r\l])* { return fParse(fs, rest.join('')); }
-               / program
-
-fetch_stmt     = f:FETCH  tgt:fetch_tgt { return tgt; }
-
-fetch_tgt      = val:user_repo { return { type: "repo", value: val}; }
-               / val:uri { return {type: "uri", value: val}; }
-
-uri            = s:string_expr { return s.name; }
-user_repo      = user:ID DIVIDE repo:ID { return {"user": user, "repo": repo}; }
-
-program        = WSNL stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
+program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement "statement" = stmt:(
                         proc_def            /* proc myproc: <stmts> end proc */
@@ -470,8 +414,6 @@ statement "statement" = stmt:(
 
 
 line_comment "comment"= HASH (!NL .)* WSNL
-
-
 
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
@@ -579,8 +521,7 @@ empty_list     = OPEN_BRACKET CLOSE_BRACKET { return {construct: "empty_list", n
 
 csv            = c:COMMA exp:expr { return exp;}
 
-string_cat "string"
-               = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
+string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat", name: '+', child_objs: {"l": l, "r": r}, children: [l,r]};}
                / string_expr
 
 string_expr    = string_lit
@@ -679,7 +620,7 @@ rel_op         = NOT_EQUAL / EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LES
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // List of reserved words.  
-keywords       =  DO / END / ENDL / FALSE / FETCH / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
+keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
 
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
 
@@ -723,7 +664,6 @@ DO             = 'do'          WS  { return text().trim(); }
 ELSE           = 'else'        WS  { return text().trim(); }
 END            = 'end'         WS  { return text().trim(); }
 ENDL           = 'endl'        WS  { return text().trim(); }
-FETCH          = 'fetch'     _ WS  { return text().trim(); }
 FALSE          = 'false'       WS  { return text().trim(); }
 GOTO           = 'goto'        WS  { return text().trim(); }
 IF             = 'if'          WS  { return text().trim(); }
@@ -746,12 +686,8 @@ TEXT           = 'text'        WS  { return text().trim(); }
 // Whitespace (space, tab, newline)*
 WS                               = WHITESPACE*
 
-_ = WHITESPACE
-
 WHITESPACE "whitespace"          = [ \t]
                                  / line_comment
-
-
 NL             = [\n\r]
 
 WSNL           = (WHITESPACE/NL)*
