@@ -226,15 +226,6 @@
   var traverse_exp = function(ast) {
     return Math.pow(traverse(ast.child_objs.base), traverse(ast.child_objs.exponent));
   };
-  var do_fetch = function(usr,rpo) {
-    var contents_uri = "https:/api.github.com/repos/"+ usr.name +"/"+ 
-        rpo.name + "/contents/"+ rpo.name +".pegjs";
-    $.get(contents_uri, function(repo) {
-        fetched_parser = PEG.buildParser(atob(repo.content));
-      });
-  };
-
-  
   var traverse_if_else = function(ast) {
     if (traverse(ast.child_objs["if_part"].child_objs["condition"])) {
       return traverse(ast.child_objs["then_part"]);
@@ -409,14 +400,63 @@
         default                 : throw ({message: "AST Traversal error: ", context: ast});
       }
     }
-  }
+  };
+
+  var fParse = function(tgt, srcStr) {
+    var fParser;
+    
+    if (tgt.type === 'uri') {
+      $.get(tgt.value, function(data) {
+        editor.getSession().setValue(data,0);
+        buildParser();
+        doParse(srcStr);
+      });
+    } else if (tgt.type === 'repo') {
+      var contents_uri = "https:/api.github.com/repos/"+ tgt.val.user +"/"+ 
+        tgt.val.repo + "/contents/"+ tgt.val.repo +".pegjs";
+      $.get(contents_uri, function(data) {
+        fParser = PEG.buildParser(atob(data));
+        
+      });
+    }
+  };
+
+  var getGrammarFromRepo = function(user, repo) {
+    var contents_uri = "https:/api.github.com/repos/"+ user +"/"+ 
+        repo + "/contents/"+ repo +".pegjs";
+    var grammar_str = "";
+    $.get(contents_uri, function(r) {
+        grammar_str = PEG.buildParser(atob(r.content));
+      });
+    return grammar_str;
+  };
+
+  getGrammarFromUri = function(uri) {
+    console.log("getGrammarFromUri");
+    
+    $.get(uri, function(data) {
+      console.log("in $.get(uri)");
+      grammar_str = data;
+      return grammar_str;
+    });
+  };   
 }
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Grammar:                                                                *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-start          = fs:fetch_stmt? rest:(.*) {return (fetched_parser.parse(rest.join('')));}
-program        = WS stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
+start          = fs:fetch_stmt rest:(. / [\n\r\l])* { return fParse(fs, rest.join('')); }
+               / program
+
+fetch_stmt     = f:FETCH  tgt:fetch_tgt { return tgt; }
+
+fetch_tgt      = val:user_repo { return { type: "repo", value: val}; }
+               / val:uri { return {type: "uri", value: val}; }
+
+uri            = s:string_expr { return s.name; }
+user_repo      = user:ID DIVIDE repo:ID { return {"user": user, "repo": repo}; }
+
+program        = WSNL stmts:statement* { return {construct: "program", name: "program", children: stmts}; }
 
 statement "statement" = stmt:(
                         proc_def            /* proc myproc: <stmts> end proc */
@@ -431,7 +471,7 @@ statement "statement" = stmt:(
 
 line_comment "comment"= HASH (!NL .)* WSNL
 
-fetch_stmt       = f:FETCH user:ID DIVIDE repo:ID WSNL {do_fetch(user, repo);}
+
 
 /* * * * * * * * * * * * * * * * * * 
  * PROCEDURE CONSTRUCTS            *
