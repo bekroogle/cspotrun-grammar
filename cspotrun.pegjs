@@ -156,20 +156,12 @@
       traverse({ construct: "initialize", name: "initialize", child_objs: {typename: "int", id: ast.child_objs.id.name, value: ast.child_objs.begin}});
     }
 
-    // If first num < second num, count up,
+    // If first num <= second num, count up,
     // If first num > second num, count down
-    // If first num == second num, throw error:
-    if (traverse(ast.child_objs.begin) < traverse(ast.child_objs.end)) {
+    if (traverse(ast.child_objs.begin) <= traverse(ast.child_objs.end)) {
       delta = 1;      
     } else if (traverse(ast.child_objs.begin) > traverse(ast.child_objs.end)) {
       delta = -1;
-    } else  if (traverse(ast.child_objs.begin) === traverse(ast.child_objs.end)) {
-      throw ({
-        name: "SyntaxError",
-        line: ast.line,
-        column: ast.column,
-        message: "Count begin and count end must be different: " + traverse(ast.child_objs.begin) + " = " + traverse(ast.child_objs.end) + "."
-      });
     }
 
     return {id: ast.child_objs.id.name, begin: traverse(ast.child_objs.begin), end: traverse(ast.child_objs.end), current: traverse(ast.child_objs.begin), "delta": delta};
