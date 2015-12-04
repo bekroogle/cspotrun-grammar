@@ -23,7 +23,7 @@
       }
     }
   };
-  
+
   var do_text_method = function(ast) {
     var id = ast.child_objs.variable.name;
     switch (ast.child_objs.method.name) {
@@ -32,9 +32,9 @@
           case "lowercase"         : return symbol_table.lookup(id).toLowerCase();
 
           // Converts to array, then reverses and converts back:
-          case "reverse"           : return symbol_table.lookup(id).split("").reverse().join("");                                   
-          
-          default: 
+          case "reverse"           : return symbol_table.lookup(id).split("").reverse().join("");
+
+          default:
             throw ({
               name: "SyntaxError",
               line: ast.line,
@@ -88,7 +88,7 @@
       return this[key].val;
     },
     li_assign: function(lval, index_list, value) {
-      
+
       var myRe = /string.*/;
 
       if (myRe.test(value.construct)) {
@@ -105,7 +105,7 @@
       eval(index_str);
     },
     li_lookup: function(key, index_list) {
-      var listVal = this.lookup(key.name);    
+      var listVal = this.lookup(key.name);
       for (var i = 0; i < index_list.length; i++) {
         listVal = listVal[traverse(index_list[i])];
       }
@@ -117,11 +117,11 @@
     proc: function(ast) {
       decircularize(ast.child_objs["body"]);
       this[ast.child_objs["id"]] = {"type": "procedure", "val": ast.child_objs["body"]};
-    } 
+    }
   };
 
   var traverse_add = function(ast) {
-    return traverse(ast.child_objs["left"]) + 
+    return traverse(ast.child_objs["left"]) +
       traverse(ast.child_objs["right"]);
   };
   var traverse_assign = function(ast) {
@@ -148,10 +148,10 @@
   };
   var traverse_count_init = function(ast) {
     var delta;
-    
+
     // Set id to initial value. Declare it if it doesn't exist:
     try {
-      traverse({construct: "assign", name: "assign", child_objs: {"id": ast.child_objs.id, value: ast.child_objs.begin}, children: [ast.child_objs.id, ast.child_objs.begin]});  
+      traverse({construct: "assign", name: "assign", child_objs: {"id": ast.child_objs.id, value: ast.child_objs.begin}, children: [ast.child_objs.id, ast.child_objs.begin]});
     } catch (e) {
       traverse({ construct: "initialize", name: "initialize", child_objs: {typename: "int", id: ast.child_objs.id.name, value: ast.child_objs.begin}});
     }
@@ -159,7 +159,7 @@
     // If first num <= second num, count up,
     // If first num > second num, count down
     if (traverse(ast.child_objs.begin) <= traverse(ast.child_objs.end)) {
-      delta = 1;      
+      delta = 1;
     } else if (traverse(ast.child_objs.begin) > traverse(ast.child_objs.end)) {
       delta = -1;
     }
@@ -172,10 +172,10 @@
 
     // Does the body n-1 times (must do one more after loop terminates):
     while (init_obj.current !== init_obj.end) {
-      
+
       // Do body portion to return stack:
       ast.return_val.push(traverse(ast.child_objs["body"]));
-      
+
       // Increment counter and update symbol table:
       init_obj.current += init_obj.delta;
       symbol_table.increment(init_obj.id, init_obj.delta);
@@ -195,9 +195,9 @@
     return newArray;
   };
   var traverse_declare = function(ast) {
-    
+
     if (ast.child_objs.typename == "list") {
-    
+
       ast.child_objs.value = {construct: "empty_list", name: "empty_list"};
     } else {
      ast.child_objs.value = {construct: "null", name: null};
@@ -241,27 +241,27 @@
   var traverse_list_item_assign = function(ast) {
     symbol_table.li_assign(ast.child_objs.lval, ast.child_objs.lval.spec, ast.child_objs.rval);
   };
-  // Build a new list from a scalar first element and an array of 
+  // Build a new list from a scalar first element and an array of
   // follow elements:
   var traverse_list_lit = function(ast) {
     var newList = []
-    
+
     // Add the first elem:
     addElems(newList, [traverse(ast.child_objs.first)]);
-    
+
     // Add the rest:
     addElems(newList, traverse_array(ast.child_objs.rest));
-    
+
     // Return the constructed list:
     return newList;
   };
   var traverse_method = function(ast) {
     // The name of the receiving object:
     var id = ast.child_objs.variable.name;
-    
+
     // The method being called on that object:
     var method = ast.child_objs.method.name;
-    
+
     // Figure out which type the variable is:
     switch (symbol_table.type_of(id)) {
       case "int": break;
@@ -284,7 +284,7 @@
   };
   var traverse_print_stmt = function(ast) {
     return traverse(ast.child_objs["expression"]).toString();
-    
+
   };
   var traverse_prompt_stmt = function(ast) {
     return prompt(traverse(ast.child_objs["expression"]));
@@ -316,15 +316,15 @@
     l = traverse(ast.child_objs["l"]);
     r = traverse(ast.child_objs["r"]);
 
-    switch (ast.child_objs["operator"]) {  
-      case '<='    : return l <= r;  
-      case '<'     : return l < r;  
-      case '>='    : return l >= r; 
-      case '>'     : return l > r; 
+    switch (ast.child_objs["operator"]) {
+      case '<='    : return l <= r;
+      case '<'     : return l < r;
+      case '>='    : return l >= r;
+      case '>'     : return l > r;
       case '='     : return l === r;
       case '<>'    : // falls through
       case '!='    : return l != r;
-      default      : throw("Non-implemented relational operator."); 
+      default      : throw("Non-implemented relational operator.");
     }
   };
   var traverse_spec = function(ast) {};
@@ -340,11 +340,11 @@
     return new_string;
   };
   var traverse_string_var = function(ast) {
-    
+
       return symbol_table.lookup(ast.name);
-    
+
   };
-  
+
   traverse = function(ast) {
     ast.return_val = [];
     if (ast.construct) {
@@ -354,7 +354,7 @@
         case "bool_lit"         : return traverse_bool_lit(ast);
         case "comment"          : return null;
         case "count_init"       : return traverse_count_init(ast);
-        case "count_loop"       : return traverse_count_loop(ast);        
+        case "count_loop"       : return traverse_count_loop(ast);
         case "declare"          : return traverse_declare(ast);
         case "divide"           : return traverse_divide(ast);
         case "empty_list"       : return [];
@@ -407,11 +407,11 @@ statement "statement" = stmt:(
 
 line_comment "comment"= HASH (!NL .)* WSNL
 
-/* * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * *
  * PROCEDURE CONSTRUCTS            *
  * * * * * * * * * * * * * * * * * */
 
-proc_def "procedure" 
+proc_def "procedure"
                  = head:proc_header body:proc_body end_proc { return {construct: "proc_def", name: "proc", child_objs: {id: head.name, "body": body}, children: [head, body]};}
 
 proc_header      = PROC i:ID COLON WSNL { return i; }
@@ -424,7 +424,7 @@ proc_call "procedure call"
                  = DO proc:ID { return { construct: "proc_call", name: "call", children: [proc], child_objs: {"id": proc.name}}; }
 
 
-/* * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * *
  * VARIABLE HANDLING CONSTRUCTS    *
  * * * * * * * * * * * * * * * * * */
 
@@ -444,7 +444,7 @@ assign_stmt "assignment"
 
 list_item_assign = LET i:list_elem e:assign_pred { return {construct: "list_item_assign", name: "list_item_assign", line: line(), column: column(), child_objs: {lval: i, rval: e}, children: [i, e]};}
 
-/* * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * *
  * CONTROL FLOW  CONSTRUCTS        *
  * * * * * * * * * * * * * * * * * */
 
@@ -464,13 +464,13 @@ then_part      = THEN? WSNL stmts:statement* { return {construct: "program", nam
 
 else_part      = ELSE WSNL stmts:statement* { return {construct: "program", name: "else part", children: stmts};}
 
-end_if         = END IF 
+end_if         = END IF
 
 // Iterative Execution (loops)
 
 loop_stmt "while loop"
                = lh:loop_header lb:loop_body el:end_loop { return {construct: "loop_stmt", name: "loop", child_objs: {condition: lh, body: lb}, children: [lh, lb]}; }
- 
+
 loop_header    = WHILE cond:bool_expr (! TO) COLON? WSNL{ return cond;}
 
 loop_body      = stmts:statement* { return {construct: "program", name: "loop body", children:  stmts}; }
@@ -485,21 +485,21 @@ count_loop "Counting loop"
 count_loop_header
                = WHILE id:ID ASSIGN_OP begin:expr TO end:expr COLON? WSNL { return {construct: "count_init", name: "count init", child_objs: {"id":id, "begin":begin, "end":end}, children: [id, begin, end], line: line(), column: column()};}
 
-/* * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * *
  * I/O CONSTRUCTS                  *
  * * * * * * * * * * * * * * * * * */
-print_stmt "print statement"    
+print_stmt "print statement"
                = PRINT e:expr { return { construct: "print_stmt", name: "print", child_objs: {expression: e}, children: [e]}; }
 
 prompt_stmt "prompt"
                = PROMPT s:prime_expr { return {construct: "prompt_stmt", name: s.name, child_objs: {expression: s}, children: [s]};}
 
-/* * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * *
  * EXPRESSIONS                     *
  * * * * * * * * * * * * * * * * * */
 
 // Arithmetic expressions:
-//   Left associative operations are refactored into 
+//   Left associative operations are refactored into
 //   commutative operations algebraically. (Subract => add a negative,
 //   divide => multiply by reciprocal).
 expr           = prompt_stmt
@@ -517,7 +517,7 @@ string_cat     = l:string_expr PLUS r:string_cat {return {construct: "string_cat
                / string_expr
 
 string_expr    = string_lit
-               / ENDL { return {construct: "string_expr", name: "endl"}; } 
+               / ENDL { return {construct: "string_expr", name: "endl"}; }
                / string_var
 
 string_lit "string literal"
@@ -536,15 +536,15 @@ dbl_quo_str_part
                = n:(! DBL_QUOTE .)* { return text(); }
 
 quo_str_part   = n:(! QUOTE .)* { return text(); }
- 
+
 prime_expr     = add
 
 add            = l:subtract PLUS r:add { return { construct: "add", name: "+", child_objs: {left: l, right: r}, children:[l, r]}; }
                / subtract
- 
+
 subtract       = l:neg r:subtract { return {construct: "add", name: '+', child_objs: {left: l, right: r}, children: [l, r]};}
                / neg
-               
+
                // Negative is parsed as multiply(-1, n).
 neg            = MINUS n:mult { return {construct: "multiply", name: "*", child_objs: {left: {construct: "number", name: -1}, right: n}, children: [{construct: "number", name: -1}, n]} ;}
                / mult
@@ -555,11 +555,11 @@ mult           = l:mod TIMES r:mult { return {construct: "multiply", name: "*", 
 mod            = num:div MOD denom:div { return {construct: "mod", name: "mod", child_objs: {"num": num, "denom": denom}, children: [num, denom]};}
                / div
 
- 
+
 div            = num:recip denom:div { return {construct: "divide", name: '*', child_objs: {numerator: num, denominator: denom}, children: [num, denom]}; }
                / recip
- 
-               // Little hack here to display reciprocals, instead of more complicated tree. 
+
+               // Little hack here to display reciprocals, instead of more complicated tree.
 recip          = DIVIDE n:atom { return {construct: "recip", name: "/", child_objs: {numerator: {construct: "number", name: 1}, denominator: n}, children:[{construct: "number", name: 1}, n]};}
                / exp
 
@@ -568,7 +568,7 @@ exp            = base:parens POWER exponent:exp { return {construct: "exp", name
 
 parens         = OPEN_PAREN a:add CLOSE_PAREN { return a; }
                / atom
-               
+
 atom           = n:num_lit { return {construct: "number", name: n}; }
                / method
                / list_elem
@@ -582,7 +582,7 @@ list_elem      =v:var spec:specifier+{ return {construct: "list_elem", name:"lis
 specifier      = OPEN_BRACKET e:expr CLOSE_BRACKET { return e; }
 
 var            = single
-                
+
 single         = i:ID {return {construct: "variable", name: i.name};}
                 / string_cat
 
@@ -590,18 +590,22 @@ single         = i:ID {return {construct: "variable", name: i.name};}
 num_lit        = f:float { return parseFloat(f); }
                / i:integer { return parseInt(i); }
 
-float  "real"  = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
+float  "real"  = sci_notation_float / std_notation_float
 
-integer "integer" 
+std_notation_float = DIGIT* SPOT DIGIT+   WS  { return text().trim(); }
+
+sci_notation_float = DIGIT (SPOT DIGIT+) TEN_TO_THE MINUS? integer { console.log(text()); return eval(text()); }
+
+integer "integer"
                = d:DIGIT+             WS  { return text().trim(); }
 
 
 // Boolean expressions:
 bool_expr      = b:bool_lit {return {construct: "bool_lit", name: b};}
-               / r:relational_expr 
+               / r:relational_expr
 
-bool_lit       = TRUE 
-               / FALSE 
+bool_lit       = TRUE
+               / FALSE
 
 
 relational_expr= l:expr op:rel_op r:expr {return {construct: "relational_expr", name: op, child_objs: {operator: op, "l": l, "r": r}, children: [l, r]};}
@@ -611,7 +615,7 @@ rel_op         = NOT_EQUAL / EQUALS / GREATER_EQUAL / GREATER / LESS_EQUAL / LES
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * LEXICAL PART                                            *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-// List of reserved words.  
+// List of reserved words.
 keywords       =  DO / END / ENDL / FALSE / GOTO / IF / LET / PRINT / PROC / PROMPT / REPEAT / TO / THEN / TRUE /  WHILE / typename
 
 typename      = tn:(TEXT / INT / REAL / LIST) { return {name: tn};}
@@ -642,6 +646,7 @@ OPEN_PAREN     = operator:'('  WS  { return operator; }
 POWER          = operator:'^'  WS  { return operator; }
 PLUS           = operator:'+'  WS  { return operator; }
 TIMES          = operator:'*'  WS  { return operator; }
+TEN_TO_THE     = operator:[Ee] WS  { return operator; }
 
 // Comparison (relational) operators:
 EQUALS         = '='           WS  { return text().trim(); }

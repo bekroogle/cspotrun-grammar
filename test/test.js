@@ -83,7 +83,7 @@ describe("CONDITIONALS", function() {
       });
     });
 
-  }); 
+  });
 });
 
 describe("EXPRESSIONS", function() {
@@ -115,11 +115,23 @@ describe("EXPRESSIONS", function() {
     var result = check('int i = 2 * (3 + 2) ^ 2');
     expect(symbol_table.lookup('i')).to.equal(50);
   })
+  it("should allow scientific notation (+exp)", function() {
+    var result = check('real M = 5.972e24');
+    expect(symbol_table.lookup('M')).to.equal(5.972e24);
+  });
+  it("should allow scientific notation (-exp)", function() {
+    var result = check('real G = 6.674e-11');
+    expect(symbol_table.lookup('G')).to.equal(6.674e-11);
+  });
+  it("should allow expressions with sci notation and regular", function() {
+    var result = check('real G = 6.674e-11\nreal GoverTEN = G / 10');
+    expect(symbol_table.lookup('GoverTEN')).to.equal(6.674e-12);
+  });
 }); // EXPRESSIONS
 
 describe("FETCH", function() {
   it("should properly parse a fetch statement", function() {
-    var result = parse('fetch myname/mylang');    
+    var result = parse('fetch myname/mylang');
   });
 });
 
@@ -163,18 +175,18 @@ describe("LISTS", function() {
   it("should initialize lists with list variable", function() {
     var result = check('list l = [1,2,3]\nlist m = l\nprint m');
     expect(result).to.equal('1,2,3');
-  }); 
+  });
   it("should parse 2D list literals", function() {
     var result = check('list l = [[1,2],[2,4],[3,6]]');
     expect(symbol_table['l']).to.eql({type: 'list', val: [[1,2],[2,4],[3,6]]});
-  }); 
+  });
   it("should parse 2D list elements", function() {
     var result = check('list l = [[1,2],[2,4],[3,6]]\nprint l[0][0]');
     expect(result).to.equal('1');
   });
   it("should parse 3D list literals", function() {
     var result = check("list l = ['A',['B1',['B2a', 'B2b']],'C']");
-    expect(symbol_table['l'].val).to.eql(['A',['B1',['B2a','B2b']],'C']); 
+    expect(symbol_table['l'].val).to.eql(['A',['B1',['B2a','B2b']],'C']);
   });
   it("should parse 3D list elements", function() {
     var result = check("list l = ['A',['B1',['B2a', 'B2b']],'C']\nprint l[1][1][0]");
@@ -282,7 +294,7 @@ describe("PRINT STATEMENTS", function() {
     it("should print simple addition expressions using int variables", function() {
       var result = check('int i = 3\nint j = 2\nprint i+j');
       expect(result).to.equal('5');
-    });  
+    });
     it("should print simple multiplication expressions using int variables", function() {
       // multiplication of two literals
       var result = check('int i = 3\nint j = 2\nprint i*j');
@@ -332,7 +344,7 @@ describe("STRINGS", function() {
       var result = check('text t = "spot"\nprint t.uppercase');
       expect(result).to.equal("SPOT");
     });
-  }); // Methods 
+  }); // Methods
 }); // STRINGS
 
 describe("SYMBOL TABLE", function() {
@@ -351,7 +363,7 @@ describe("SYMBOL TABLE", function() {
       var result = check('text t = 3.14\
         print t');
       expect(result).to.equal('3.14');
-    });    
+    });
   }); // Initialized variables
 
   describe("Assignments", function() {
@@ -381,4 +393,3 @@ describe("SYMBOL TABLE", function() {
     }); // Cast assignments
   });// Assignents
 }); // SYMBOL_TABLE
-
